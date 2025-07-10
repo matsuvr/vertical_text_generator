@@ -62,8 +62,50 @@ docker-compose up -d
 
 ### 5. API使用例
 
+#### Windows Git Bash の場合（重要）
+
+Git Bashでは、シングルクォートが正しく処理されないため、以下の方法を使用してください：
+
+**方法1: ヒアドキュメントを使用（推奨）**
 ```bash
-# テキストをレンダリング
+curl -X POST http://localhost:8000/render \
+  -H "Authorization: Bearer your-secure-random-token-here" \
+  -H "Content-Type: application/json" \
+  --data-binary @- <<EOF
+{"text":"こんにちは、世界！\n日本語の縦書きです。","font_size":24,"max_chars_per_line":10}
+EOF
+```
+
+**方法2: ダブルクォートでエスケープ**
+```bash
+curl -X POST http://localhost:8000/render \
+  -H "Authorization: Bearer your-secure-random-token-here" \
+  -H "Content-Type: application/json" \
+  -d "{\"text\":\"こんにちは、世界！\\n日本語の縦書きです。\",\"font_size\":24,\"max_chars_per_line\":10}"
+```
+
+**方法3: ファイル経由（最も確実）**
+```bash
+# request.jsonファイルを作成
+cat > request.json <<EOF
+{
+  "text": "こんにちは、世界！\n日本語の縦書きです。",
+  "font_size": 24,
+  "max_chars_per_line": 10
+}
+EOF
+
+# リクエスト送信
+curl -X POST http://localhost:8000/render \
+  -H "Authorization: Bearer your-secure-random-token-here" \
+  -H "Content-Type: application/json" \
+  -d @request.json
+```
+
+#### Linux/Mac/WSL の場合
+
+通常のシングルクォートが使用可能です：
+```bash
 curl -X POST http://localhost:8000/render \
   -H "Authorization: Bearer your-secure-random-token-here" \
   -H "Content-Type: application/json" \
@@ -73,6 +115,73 @@ curl -X POST http://localhost:8000/render \
     "max_chars_per_line": 10
   }'
 ```
+
+#### Windows コマンドプロンプト
+
+```cmd
+curl -X POST http://localhost:8000/render ^
+  -H "Authorization: Bearer your-secure-random-token-here" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"text\":\"こんにちは、世界！\\n日本語の縦書きです。\",\"font_size\":24,\"max_chars_per_line\":10}"
+```
+
+#### Windows PowerShell
+
+```powershell
+$headers = @{
+    "Authorization" = "Bearer your-secure-random-token-here"
+    "Content-Type" = "application/json"
+}
+
+$body = @{
+    text = "こんにちは、世界！`n日本語の縦書きです。"
+    font_size = 24
+    max_chars_per_line = 10
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8000/render" -Method Post -Headers $headers -Body $body
+```
+
+#### レスポンスの処理
+
+**画像の保存（Git Bash）**
+```bash
+# レスポンスを保存してPythonで処理
+curl -X POST http://localhost:8000/render \
+  -H "Authorization: Bearer your-secure-random-token-here" \
+  -H "Content-Type: application/json" \
+  --data-binary @- <<EOF | python -c "import json,base64,sys;d=json.load(sys.stdin);open('output.png','wb').write(base64.b64decode(d['image_base64']))"
+{"text":"テスト","font_size":20}
+EOF
+```
+
+**レスポンスの確認**
+```bash
+# 整形して表示（jqが必要）
+curl -X POST http://localhost:8000/render \
+  -H "Authorization: Bearer your-secure-random-token-here" \
+  -H "Content-Type: application/json" \
+  --data-binary @- <<EOF | jq .
+{"text":"テスト","font_size":20}
+EOF
+```
+
+### トラブルシューティング
+
+#### Git Bashで "There was an error parsing the body" エラーが出る場合
+
+1. **シングルクォートを使用していないか確認**: Git Bashではシングルクォート内の文字列が正しく処理されません
+2. **ヒアドキュメントまたはファイル経由を使用**: 上記の推奨方法を使用してください
+3. **`--data-urlencode`は使用しない**: このオプションはJSONをURLエンコードしてしまいます
+
+#### 推奨ツール
+
+複雑なテストには、付属の`test_api.py`スクリプトの使用を推奨します：
+```bash
+python test_api.py
+```
+
+このスクリプトは自動的に複数のテストケースを実行し、画像を保存します。
 
 ## Google Cloud Runへのデプロイ
 
@@ -259,7 +368,3 @@ API情報（認証不要）
 ## ライセンス
 
 MIT License
-
-## 貢献
-
-プルリクエストを歓迎します。大きな変更の場合は、まずissueを作成して変更内容を議論してください。
