@@ -8,8 +8,9 @@ HTML/CSS + Playwright (Chrome Headless) を使用した高品質な日本語縦�
 - 📝 **日本語最適化**: 縦中横、三点リーダー、約物の適切な処理
 - 🔤 **フォント対応**: 源暎アンチックフォント内蔵（Noto Sans CJK JPフォールバック）
 - ✂️ **自動改行**: BudouXによる自然な日本語改行
-- 📐 **自動調整**: テキスト量に応じた画像サイズ自動調整
-- 🖼️ **透明背景**: 背景透明のPNG画像生成
+- 📐 **自動サイズ調整**: テキスト量に応じた画像サイズの完全自動調整
+- 🖼️ **ピッタリトリミング**: 文字列を余白なく囲む自動トリミング
+- 🎯 **透明背景**: 背景透明のPNG画像生成
 - 🔒 **API認証**: Bearerトークンによるシンプルな認証
 
 ## 動作環境
@@ -214,13 +215,9 @@ curl -X POST $SERVICE_URL/render \
 {
   "text": "レンダリングするテキスト",
   "font_size": 20,
-  "width": 300,
-  "height": 400,
   "line_height": 1.6,
   "letter_spacing": 0.05,
   "padding": 20,
-  "auto_height": true,
-  "auto_trim": true,
   "use_tategaki_js": false,
   "max_chars_per_line": 15
 }

@@ -58,8 +58,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 class VerticalTextRequest(BaseModel):
     text: str = Field(..., description="レンダリングするテキスト")
     font_size: int = Field(default=20, ge=8, le=100, description="フォントサイズ")
-    width: int = Field(default=300, ge=50, le=1000, description="画像の幅")
-    height: int = Field(default=400, ge=50, le=2000, description="画像の高さ")
     line_height: float = Field(default=1.6, ge=1.0, le=3.0, description="行間")
     letter_spacing: float = Field(
         default=0.05,
@@ -68,11 +66,6 @@ class VerticalTextRequest(BaseModel):
         description="文字間（em単位）",
     )
     padding: int = Field(default=20, ge=0, le=100, description="余白（ピクセル）")
-    auto_height: bool = Field(
-        default=True,
-        description="テキスト量に応じて高さを自動調整",
-    )
-    auto_trim: bool = Field(default=True, description="画像の余白を自動的にトリミング")
     use_tategaki_js: bool = Field(
         default=False,
         description="Tategaki.jsライブラリを使用",
@@ -211,13 +204,10 @@ class JapaneseVerticalHTMLGenerator:
     def create_vertical_html(
         self,
         text: str,
-        width: int = 300,
-        height: int = 400,
         font_size: int = 20,
         line_height: float = 1.6,
         letter_spacing: float = 0.05,
         padding: int = 20,
-        auto_height: bool = True,
         use_tategaki_js: bool = False,
         max_chars_per_line: Optional[int] = None,
     ) -> str:
@@ -232,58 +222,35 @@ class JapaneseVerticalHTMLGenerator:
         # テキスト処理
         processed_text = self._process_text_for_vertical(text)
 
-        # 高さの自動計算（改良版）
-        if auto_height:
-            # テキストの文字数を基に高さを計算
-            lines = text.split("\n")
-            max_line_chars = max(len(line) for line in lines) if lines else 0
+        # テキストの文字数を基に適切なサイズを計算
+        lines = text.split("\n")
+        max_line_chars = max(len(line) for line in lines) if lines else 0
+        num_lines = len(lines)
 
-            # 1列に入る文字数を計算（フォントサイズと行高さを考慮）
-            # より正確な計算のため、実効的な文字高さを使用
-            effective_char_height = font_size * line_height
-            chars_per_column = max(
-                1, int((height - padding * 2) / effective_char_height)
-            )
+        # 基本的な幅の計算（1列あたりの幅）
+        column_width = int(font_size * line_height * 1.2)  # 1文字の幅 + 余裕
 
-            # 必要な列数を計算（改行も考慮）
-            # 各行が新しい列から始まることを考慮
-            estimated_columns = 0
-            current_column_chars = 0
+        # 高さの計算（最長行を基準に）
+        estimated_height = int(
+            (max_line_chars * font_size * line_height) + (padding * 2) + 50
+        )
 
-            for line in lines:
-                if current_column_chars > 0:  # 既に文字がある場合は改行
-                    current_column_chars += 1
+        # 幅の計算（行数を考慮）
+        # 1列に収まる文字数を計算
+        chars_per_column = max(10, int(estimated_height / (font_size * line_height)))
 
-                if current_column_chars + len(line) > chars_per_column:
-                    # 新しい列が必要
-                    estimated_columns += 1
-                    current_column_chars = len(line)
-                else:
-                    current_column_chars += len(line)
+        # 必要な列数を計算
+        total_chars = sum(len(line) for line in lines)
+        estimated_columns = max(
+            1, (total_chars + num_lines - 1) // chars_per_column + 1
+        )
 
-            # 最後の列を追加
-            if current_column_chars > 0:
-                estimated_columns += 1
+        # 最終的な幅（複数列の場合）
+        estimated_width = (estimated_columns * column_width) + (padding * 2)
 
-            # 最長行を基準に高さを計算（より余裕を持たせる）
-            single_column_height = int(
-                (max_line_chars * effective_char_height) + (padding * 2) + 100
-            )
-
-            # 複数列の場合の高さ計算
-            if estimated_columns > 1:
-                # 列数に応じて幅を考慮した高さを設定
-                estimated_height = max(
-                    single_column_height,
-                    int(height * 1.5),  # 最低でも元の高さの1.5倍
-                    int(
-                        (chars_per_column * effective_char_height) + (padding * 2) + 100
-                    ),
-                )
-            else:
-                estimated_height = single_column_height
-        else:
-            estimated_height = height
+        # 最小幅を保証
+        estimated_width = max(200, estimated_width)
+        estimated_height = max(200, estimated_height)
 
         # フォントフェイス定義
         font_face = ""
@@ -331,7 +298,7 @@ class JapaneseVerticalHTMLGenerator:
         }}
 
         body {{
-            width: {width}px;
+            width: {estimated_width}px;
             height: {estimated_height}px;
             background: transparent;
             overflow: hidden;
@@ -409,8 +376,6 @@ class HTMLToPNGConverter:
     async def convert_with_playwright(
         html_content: str,
         output_path: str,
-        width: int,
-        height: int,
     ) -> Tuple[float, int, int]:
         """PlaywrightでHTMLをPNGに変換"""
         start_time = time.time()
@@ -433,9 +398,6 @@ class HTMLToPNGConverter:
                 try:
                     # ページを作成
                     page = await browser.new_page()
-
-                    # ビューポートを設定
-                    await page.set_viewport_size({"width": width, "height": height})
 
                     # HTMLコンテンツを設定
                     await page.set_content(html_content, wait_until="domcontentloaded")
@@ -538,13 +500,10 @@ async def render_vertical_text(request: VerticalTextRequest):
         # HTML生成
         html_content = html_generator.create_vertical_html(
             text=request.text,
-            width=request.width,
-            height=request.height,
             font_size=request.font_size,
             line_height=request.line_height,
             letter_spacing=request.letter_spacing,
             padding=request.padding,
-            auto_height=request.auto_height,
             use_tategaki_js=request.use_tategaki_js,
             max_chars_per_line=request.max_chars_per_line,
         )
@@ -562,28 +521,17 @@ async def render_vertical_text(request: VerticalTextRequest):
         ) = await converter.convert_with_playwright(
             html_content,
             temp_png_path,
-            request.width,
-            request.height,
         )
 
         # 画像のトリミング処理
-        if request.auto_trim:
-            img, trimmed = trim_image(temp_png_path)
+        img, trimmed = trim_image(temp_png_path)
 
-            # トリミングされた画像をバイトデータとして保存
-            img_byte_arr = io.BytesIO()
-            img.save(img_byte_arr, format="PNG", optimize=True)
-            image_data = img_byte_arr.getvalue()
+        # トリミングされた画像をバイトデータとして保存
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format="PNG", optimize=True)
+        image_data = img_byte_arr.getvalue()
 
-            width, height = img.size
-        else:
-            # トリミングなしの場合
-            with open(temp_png_path, "rb") as f:
-                image_data = f.read()
-
-            img = Image.open(io.BytesIO(image_data))
-            width, height = img.size
-            trimmed = False
+        width, height = img.size
 
         # Base64エンコード
         image_base64 = base64.b64encode(image_data).decode("utf-8")
@@ -614,8 +562,8 @@ async def root():
         "features": {
             "html_css": "writing-mode: vertical-rl, text-orientation: mixed",
             "font": "源暎アンチックフォント対応",
-            "auto_height": "テキスト量に応じた自動高さ調整",
-            "auto_trim": "画像の余白自動トリミング",
+            "auto_sizing": "テキスト量に応じた自動サイズ調整",
+            "auto_trim": "文字列をピッタリ囲むトリミング",
             "tategaki_js": "Tategaki.jsライブラリ対応（オプション）",
             "transparent_bg": "透明背景対応",
             "converter": "Playwright (Chrome Headless)",
