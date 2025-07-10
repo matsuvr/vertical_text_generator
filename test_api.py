@@ -42,7 +42,7 @@ def test_api(api_url="http://localhost:8000", token=None):
             "data": {
                 "text": "吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。",
                 "font_size": 20,
-                "max_chars_per_line": 15,
+                "max_chars_per_line": 10,
             },
         },
         {
