@@ -1,0 +1,20 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# fonts
+fonts/GenEiAntiqueNv5-M.ttf
+
+# .env
+.env
+
+# test folder
+test_results/
+chrome_test_py.py

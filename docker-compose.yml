@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  svg-vertical-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"  # 8000番ポートで公開
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DISPLAY=:99  # Chrome用の仮想ディスプレイ
+      - API_TOKEN=${API_TOKEN}  # .envファイルから自動的に読み込まれます
+    env_file:
+      - .env  # .envファイルを明示的に指定
+    volumes:
+      - ./:/app
+      # フォントディレクトリをマウント
+      - ./fonts:/app/fonts:ro  # 読み取り専用でマウント
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s  # Chrome/Inkscapeの初期化に時間がかかるため
+    # Chrome実行用の追加設定
+    security_opt:
+      - seccomp:unconfined
+    shm_size: 2gb  # Chrome用の共有メモリ

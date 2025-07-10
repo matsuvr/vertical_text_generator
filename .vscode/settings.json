@@ -1,0 +1,31 @@
+{
+    "python.linting.enabled": true,
+    "python.linting.ruffEnabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": false,
+    "python.linting.mypyEnabled": false,
+    "python.formatting.provider": "none",
+    "python.formatting.ruffPath": "ruff",
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit",
+            "source.fixAll": "explicit"
+        },
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    "ruff.enable": true,
+    "ruff.organizeImports": true,
+    "ruff.fixAll": true,
+
+    // 画像プレビューの背景色を白に設定
+    "imagePreview.backgroundColor": "white",
+
+    // エディターテーマのカスタマイズ（画像プレビュー用）
+    "workbench.colorCustomizations": {
+        // 画像プレビューの背景色を白に設定
+        "imagePreview.background": "#ffffff",
+        // 透明画像の背景パターンも白ベースに
+        "imagePreview.transparentBackground": "#ffffff"
+    }
+}
