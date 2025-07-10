@@ -18,3 +18,7 @@ fonts/GenEiAntiqueNv5-M.ttf
 # test folder
 test_results/
 chrome_test_py.py
+
+# VSCode settings
+.vscode/
+.vscode/settings.json
