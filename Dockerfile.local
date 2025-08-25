@@ -1,0 +1,34 @@
+# 家庭内サーバー用 Dockerfile（Playwright公式ベース）
+FROM mcr.microsoft.com/playwright/python:v1.54.0-jammy
+
+# 依存パッケージ（日本語フォント等）
+USER root
+RUN apt-get update && apt-get install -y \
+    fonts-noto-cjk \
+    fonts-noto-cjk-extra \
+    fonts-liberation \
+    libfreetype6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 作業ディレクトリ
+WORKDIR /app
+
+# フォントディレクトリを作成
+RUN mkdir -p /app/fonts
+
+# Pythonの依存関係をインストール
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# アプリケーションファイルをコピー
+COPY . .
+
+# 環境変数
+ENV PORT=8000
+ENV PYTHONPATH=/app
+
+# ポート公開
+EXPOSE 8000
+
+# アプリケーション起動
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -6,6 +6,7 @@ import logging
 import os
 import tempfile
 import time
+import uuid
 from datetime import datetime
 from typing import Optional, Tuple
 
@@ -16,6 +17,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from PIL import Image
 from pydantic import BaseModel, Field, validator
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 # ログ設定
 logging.basicConfig(level=logging.INFO)
@@ -23,19 +25,67 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="HTMLベース日本語縦書きAPI")
 
-# セキュリティ設定
-security = HTTPBearer()
+# セキュリティ設定 (Authorization欠如も401に統一するため auto_error=False)
+security = HTTPBearer(auto_error=False)
 
-# 環境変数からトークンを取得（デフォルト値を設定）
+# 環境変数からトークンを取得 (デフォルト値を設定)
 API_TOKEN = os.getenv("API_TOKEN", "your-secret-token-here")
 
 
-def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
-    """Bearerトークンの検証"""
-    if credentials.credentials != API_TOKEN:
+class ErrorResponse(BaseModel):
+    """統一エラーレスポンス"""
+
+    code: str = Field(..., description="アプリケーションエラーコード")
+    message: str = Field(..., description="エラーメッセージ（汎用）")
+    correlation_id: str = Field(..., alias="correlationId", description="相関ID")
+    errors: Optional[list] = Field(default=None, description="詳細エラー（任意）")
+
+
+def _get_correlation_id(request: Request) -> str:
+    """ヘッダから相関IDを取得。無ければ生成。"""
+    return (
+        request.headers.get("X-Correlation-ID")
+        or request.headers.get("X-Correlation-Id")
+        or uuid.uuid4().hex
+    )
+
+
+def _error_json_response(
+    request: Request,
+    *,
+    status_code: int,
+    code: str,
+    message: str,
+    errors: Optional[list] = None,
+    extra_headers: Optional[dict] = None,
+):
+    """統一形式のエラーレスポンスを返す（X-Correlation-ID付き）。"""
+    cid = _get_correlation_id(request)
+    body = ErrorResponse(code=code, message=message, correlationId=cid, errors=errors)
+    headers = {"X-Correlation-ID": cid}
+    if extra_headers:
+        headers.update(extra_headers)
+    return JSONResponse(
+        status_code=status_code, content=body.model_dump(by_alias=True), headers=headers
+    )
+
+
+def verify_token(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+) -> str:
+    """Bearerトークンの検証（欠如/不一致ともに401へ統一）"""
+    if not credentials or not credentials.credentials:
+        # 認証情報欠如 → 401
         raise HTTPException(
             status_code=401,
-            detail="Invalid authentication credentials",
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if credentials.credentials != API_TOKEN:
+        # トークン不一致 → 401
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized",
             headers={"WWW-Authenticate": "Bearer"},
         )
     return credentials.credentials
@@ -43,14 +93,89 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """バリデーションエラーの詳細ログ"""
-    logger.error(f"Validation error for {request.url}")
-    logger.error(f"Request body: {await request.body()}")
-    logger.error(f"Errors: {exc.errors()}")
-
+    """バリデーションエラー → 422（統一スキーマ）"""
+    cid = _get_correlation_id(request)
+    try:
+        body = await request.body()
+    except Exception:
+        body = b""
+    logger.error(
+        "[VALIDATION_ERROR] Validation failed",
+        extra={
+            "cid": cid,
+            "path": str(request.url),
+            "errors": exc.errors(),
+            "body": body.decode("utf-8", errors="ignore"),
+        },
+    )
+    headers = {"X-Correlation-ID": cid}
+    payload = ErrorResponse(
+        code="VALIDATION_ERROR",
+        message="Validation failed",
+        correlationId=cid,
+        errors=exc.errors(),
+    )
     return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors()},
+        status_code=422, content=payload.model_dump(by_alias=True), headers=headers
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """HTTP例外 → 統一スキーマに変換"""
+    cid = _get_correlation_id(request)
+    status = exc.status_code
+    # よく使うコードの標準化
+    code_map = {
+        401: ("UNAUTHORIZED", "Unauthorized"),
+        403: ("FORBIDDEN", "Forbidden"),
+        404: ("NOT_FOUND", "Not Found"),
+        405: ("METHOD_NOT_ALLOWED", "Method Not Allowed"),
+        500: ("INTERNAL_ERROR", "Internal server error"),
+    }
+    code, message = code_map.get(status, ("HTTP_ERROR", "HTTP error"))
+
+    # ログ(詳細はログにのみ)
+    logger.error(
+        f"[{code}] {message}",
+        extra={
+            "cid": cid,
+            "path": str(request.url),
+            "status": status,
+            "detail": str(exc.detail),
+        },
+    )
+
+    headers = {"X-Correlation-ID": cid}
+    # 401はWWW-Authenticateヘッダを付与
+    if status == 401:
+        headers["WWW-Authenticate"] = "Bearer"
+    # 既存ヘッダをマージ
+    if exc.headers:
+        headers.update(exc.headers)
+
+    payload = ErrorResponse(code=code, message=message, correlationId=cid)
+    return JSONResponse(
+        status_code=status, content=payload.model_dump(by_alias=True), headers=headers
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """想定外の例外 → 500 統一スキーマ"""
+    cid = _get_correlation_id(request)
+    logger.error(
+        "[INTERNAL_ERROR] Unhandled exception",
+        exc_info=True,
+        extra={"cid": cid, "path": str(request.url)},
+    )
+    payload = ErrorResponse(
+        code="INTERNAL_ERROR", message="Internal server error", correlationId=cid
+    )
+    return JSONResponse(
+        status_code=500,
+        content=payload.model_dump(by_alias=True),
+        headers={"X-Correlation-ID": cid},
     )
 
 
@@ -190,7 +315,9 @@ class JapaneseVerticalHTMLGenerator:
             # 2桁数字を縦中横にする（3桁以上は除外）
             # 数字の前後が数字でない2桁の数字のみを縦中横にする
             line = re.sub(
-                r"(?<!\d)(\d{1,2})(?!\d)", r'<span class="tcy">\1</span>', line
+                r"(?<!\d)(\d{1,2})(?!\d)",
+                r'<span class="tcy">\1</span>',
+                line,
             )
 
             # 三点リーダーを縦書き用の文字に置換（源暎アンチック対応）
@@ -232,7 +359,7 @@ class JapaneseVerticalHTMLGenerator:
 
         # 高さの計算（最長行を基準に）
         estimated_height = int(
-            (max_line_chars * font_size * line_height) + (padding * 2) + 50
+            (max_line_chars * font_size * line_height) + (padding * 2) + 50,
         )
 
         # 幅の計算（行数を考慮）
@@ -242,7 +369,8 @@ class JapaneseVerticalHTMLGenerator:
         # 必要な列数を計算
         total_chars = sum(len(line) for line in lines)
         estimated_columns = max(
-            1, (total_chars + num_lines - 1) // chars_per_column + 1
+            1,
+            (total_chars + num_lines - 1) // chars_per_column + 1,
         )
 
         # 最終的な幅（複数列の場合）
@@ -492,7 +620,9 @@ converter = HTMLToPNGConverter()
 
 
 @app.post(
-    "/render", response_model=VerticalTextResponse, dependencies=[Depends(verify_token)]
+    "/render",
+    response_model=VerticalTextResponse,
+    dependencies=[Depends(verify_token)],
 )
 async def render_vertical_text(request: VerticalTextRequest):
     """縦書きテキストをレンダリング（認証必須）"""
@@ -547,9 +677,14 @@ async def render_vertical_text(request: VerticalTextRequest):
             trimmed=trimmed,
         )
 
-    except Exception as e:
-        logger.error(f"Rendering failed: {e!s}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        # 内部詳細はレスポンスに出さず、ログのみに残す
+        logger.error("[INTERNAL_ERROR] Rendering failed", exc_info=True)
+        # FastAPIのグローバルハンドラに任せず、明示的に統一スキーマで返す
+        # リクエストオブジェクトを取得するために関数シグネチャ変更を避け、Starletteのコンテキストがないため
+        # ここでは汎用の相関ID生成のみ行う
+        # ただしRequestにアクセスできないため、グローバルハンドラを使うのが安全
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/")
@@ -597,16 +732,22 @@ async def debug_html(
     max_chars_per_line: Optional[int] = None,
 ):
     """生成されるHTMLをデバッグ用に確認（認証必須）"""
-    html_content = html_generator.create_vertical_html(
-        text=text,
-        font_size=font_size,
-        use_tategaki_js=use_tategaki_js,
-        max_chars_per_line=max_chars_per_line,
-    )
-    return HTMLResponse(content=html_content)
+    try:
+        html_content = html_generator.create_vertical_html(
+            text=text,
+            font_size=font_size,
+            use_tategaki_js=use_tategaki_js,
+            max_chars_per_line=max_chars_per_line,
+        )
+        return HTMLResponse(content=html_content)
+    except Exception:
+        logger.error("[INTERNAL_ERROR] debug_html failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Cloud RunではPORT環境変数を使用
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)

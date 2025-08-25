@@ -1,0 +1,52 @@
+# .dockerignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git/
+.mypy_cache/
+.pytest_cache/
+.hypothesis/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# テスト関連
+test_output/
+tests/
+*_test.py
+test_*.py
+
+# ドキュメント
+README.md
+*.md
+docs/
+
+# 設定ファイル
+.env
+.env.local
+docker-compose.yml
+docker-compose.*.yml
+
+# ビルド成果物
+dist/
+build/
+*.egg-info/
