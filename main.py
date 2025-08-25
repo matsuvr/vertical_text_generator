@@ -9,7 +9,6 @@ import tempfile
 import time
 import uuid
 from datetime import datetime
-from pathlib import Path
 from typing import Optional, Tuple
 
 import budoux
@@ -32,6 +31,17 @@ security = HTTPBearer(auto_error=False)
 
 # 環境変数からトークンを取得 (デフォルト値を設定)
 API_TOKEN = os.getenv("API_TOKEN", "your-secret-token-here")
+
+# フォント候補パス
+from pathlib import Path
+
+FONT_CANDIDATES = [
+    Path("fonts/GenEiAntiqueNv5-M.ttf"),
+    Path("/app/fonts/GenEiAntiqueNv5-M.ttf"),
+    Path("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"),
+    Path("/System/Library/Fonts/Hiragino Sans GB.ttc"),  # macOS
+    Path("C:/Windows/Fonts/msgothic.ttc"),  # Windows
+]
 
 
 class ErrorResponse(BaseModel):
@@ -68,7 +78,9 @@ def _error_json_response(
     if extra_headers:
         headers.update(extra_headers)
     return JSONResponse(
-        status_code=status_code, content=body.model_dump(by_alias=True), headers=headers
+        status_code=status_code,
+        content=body.model_dump(by_alias=True),
+        headers=headers,
     )
 
 
@@ -118,7 +130,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         errors=exc.errors(),
     )
     return JSONResponse(
-        status_code=422, content=payload.model_dump(by_alias=True), headers=headers
+        status_code=422,
+        content=payload.model_dump(by_alias=True),
+        headers=headers,
     )
 
 
@@ -158,7 +172,9 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
     payload = ErrorResponse(code=code, message=message, correlationId=cid)
     return JSONResponse(
-        status_code=status, content=payload.model_dump(by_alias=True), headers=headers
+        status_code=status,
+        content=payload.model_dump(by_alias=True),
+        headers=headers,
     )
 
 
@@ -172,7 +188,9 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         extra={"cid": cid, "path": str(request.url)},
     )
     payload = ErrorResponse(
-        code="INTERNAL_ERROR", message="Internal server error", correlationId=cid
+        code="INTERNAL_ERROR",
+        message="Internal server error",
+        correlationId=cid,
     )
     return JSONResponse(
         status_code=500,
@@ -318,6 +336,24 @@ class JapaneseVerticalHTMLGenerator:
             # U+2026（…）をU+FE19（︙）に変換
             line = line.replace("…", "︙")
 
+            # 棒状記号（ダーシ・罫線など）で縦組時に回転定義がないものを水平バーで描画
+            # 対象: — (U+2014), ― (U+2015), – (U+2013), − (U+2212), － (U+FF0D),
+            #      ─ (U+2500), ━ (U+2501), ⎯ (U+23AF)
+            # 注意: 長音記号「ー」(U+30FC) は含めない
+            rotatable_pattern = r"([—―–−－─━⎯]+)"
+
+            def _dash_to_hbar(m: re.Match) -> str:
+                out = []
+                for ch in m.group(1):
+                    # 罫線の太さを文字に応じて調整
+                    if ch == "━":
+                        out.append('<span class="hbar hbar--bold"></span>')
+                    else:
+                        out.append('<span class="hbar"></span>')
+                return "".join(out)
+
+            line = re.sub(rotatable_pattern, _dash_to_hbar, line)
+
             processed_lines.append(line)
 
         return "<br>".join(processed_lines)
@@ -336,13 +372,14 @@ class JapaneseVerticalHTMLGenerator:
 
         column_width = int(font_size * line_height * 1.2)
         estimated_height = int(
-            (max_line_chars * font_size * line_height) + (padding * 2) + 50
+            (max_line_chars * font_size * line_height) + (padding * 2) + 50,
         )
 
         chars_per_column = max(10, int(estimated_height / (font_size * line_height)))
         total_chars = sum(len(line) for line in lines)
         estimated_columns = max(
-            1, (total_chars + num_lines - 1) // chars_per_column + 1
+            1,
+            (total_chars + num_lines - 1) // chars_per_column + 1,
         )
 
         estimated_width = (estimated_columns * column_width) + (padding * 2)
@@ -488,6 +525,34 @@ class JapaneseVerticalHTMLGenerator:
             display: inline-block;
             vertical-align: middle;
             margin-top: -0.1em;
+        }}
+
+        /* 縦組で回転が定義されていない棒状記号を強制回転 */
+        .rotate-90 {{
+            display: inline-block;
+            /* 文字を横倒し（横組み方向）にする */
+            text-orientation: sideways;
+            /* 一部ブラウザの互換性のため回転も併用 */
+            transform: rotate(90deg);
+            transform-origin: center center;
+            /* 縦字用OpenType機能を無効化して形のブレを避ける */
+            font-feature-settings: 'vert' 0, 'vrt2' 0, 'vpal' 0;
+            line-height: 1;
+            letter-spacing: 0;
+        }}
+
+        /* 水平バー（横線）スタイル */
+        .hbar {{
+            display: inline-block;
+            width: 1em;
+            height: 2px;
+            background-color: currentColor;
+            vertical-align: middle;
+            margin: 0.2em 0;
+        }}
+
+        .hbar--bold {{
+            height: 3px;
         }}
 
         /* ブラウザのデフォルトスタイルを確実にリセット */
