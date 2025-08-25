@@ -4,10 +4,12 @@ import base64
 import io
 import logging
 import os
+import re
 import tempfile
 import time
 import uuid
 from datetime import datetime
+from pathlib import Path
 from typing import Optional, Tuple
 
 import budoux
@@ -228,16 +230,10 @@ class JapaneseVerticalHTMLGenerator:
 
     def _get_default_font_path(self) -> str:
         """デフォルトフォントパスを取得"""
-        font_candidates = [
-            "/app/fonts/GenEiAntiqueNv5-M.ttf",
-            "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-            "/usr/share/fonts/truetype/noto-cjk/NotoSansCJK-Regular.ttc",
-        ]
-
-        for font_path in font_candidates:
-            if os.path.exists(font_path):
-                logger.info(f"Using font: {font_path}")
-                return font_path
+        for path in FONT_CANDIDATES:
+            if path.exists():
+                logger.info(f"Using font: {path}")
+                return str(path)
 
         logger.warning("No Japanese font found, using system default")
         return ""
@@ -304,8 +300,6 @@ class JapaneseVerticalHTMLGenerator:
 
     def _process_text_for_vertical(self, text: str) -> str:
         """縦書き用のテキスト処理（縦中横など）"""
-        import re
-
         # 改行を<br>に変換
         text = self._escape_html(text)
         lines = text.split("\n")
@@ -327,6 +321,44 @@ class JapaneseVerticalHTMLGenerator:
             processed_lines.append(line)
 
         return "<br>".join(processed_lines)
+
+    def _calculate_canvas_size(
+        self,
+        text: str,
+        font_size: int,
+        line_height: float,
+        padding: int,
+    ) -> Tuple[int, int]:
+        """テキストからキャンバスサイズを推定"""
+        lines = text.split("\n")
+        max_line_chars = max(len(line) for line in lines) if lines else 0
+        num_lines = len(lines)
+
+        column_width = int(font_size * line_height * 1.2)
+        estimated_height = int(
+            (max_line_chars * font_size * line_height) + (padding * 2) + 50
+        )
+
+        chars_per_column = max(10, int(estimated_height / (font_size * line_height)))
+        total_chars = sum(len(line) for line in lines)
+        estimated_columns = max(
+            1, (total_chars + num_lines - 1) // chars_per_column + 1
+        )
+
+        estimated_width = (estimated_columns * column_width) + (padding * 2)
+        return max(200, estimated_width), max(200, estimated_height)
+
+    def _font_face_css(self, font_base64: Optional[str]) -> str:
+        """フォント定義のCSSを生成"""
+        if not font_base64:
+            return ""
+        return f"""
+            @font-face {{
+                font-family: 'GenEiAntique';
+                src: url(data:font/ttf;base64,{font_base64}) format('truetype');
+                font-display: block;
+            }}
+            """
 
     def create_vertical_html(
         self,
@@ -381,15 +413,7 @@ class JapaneseVerticalHTMLGenerator:
         estimated_height = max(200, estimated_height)
 
         # フォントフェイス定義
-        font_face = ""
-        if font_base64:
-            font_face = f"""
-            @font-face {{
-                font-family: 'GenEiAntique';
-                src: url(data:font/ttf;base64,{font_base64}) format('truetype');
-                font-display: block;
-            }}
-            """
+        font_face = self._font_face_css(font_base64)
 
         # Tategaki.jsの追加
         tategaki_imports = ""
