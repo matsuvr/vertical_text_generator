@@ -52,6 +52,15 @@ def test_api(api_url="http://localhost:8000", token=None):
                 "font_size": 12,
             },
         },
+        {
+            "name": "dashes",
+            "data": {
+                # 含まれる記号: U+2015(―)×2, U+2014(—)×2, U+2500(─)×2
+                "text": "これは――テスト——です。次の行は──罫線──の確認。",
+                "font_size": 24,
+                "max_chars_per_line": 12,
+            },
+        },
     ]
 
     # 結果保存用ディレクトリ

@@ -38,6 +38,7 @@ tar --exclude='.git' \
     --exclude='test_results' \
     --exclude='.venv' \
     --exclude='node_modules' \
+    --exclude='project.tar.gz' \
     -czf project.tar.gz ./
 scp -i "$SSH_KEY" project.tar.gz $SERVER_USER@$SERVER_IP:$REMOTE_DIR/
 ssh -i "$SSH_KEY" $SERVER_USER@$SERVER_IP "cd $REMOTE_DIR && tar -xzf project.tar.gz && rm project.tar.gz"
