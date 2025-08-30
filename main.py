@@ -1,14 +1,15 @@
 """HTMLベース日本語縦書きAPI - Playwrightで高品質な縦書きレンダリング"""
 
 import base64
+import html
 import io
 import logging
 import os
 import re
-import tempfile
 import time
 import uuid
 from datetime import datetime
+from pathlib import Path
 from typing import Optional, Tuple
 
 import budoux
@@ -33,8 +34,6 @@ security = HTTPBearer(auto_error=False)
 API_TOKEN = os.getenv("API_TOKEN", "your-secret-token-here")
 
 # フォント候補パス
-from pathlib import Path
-
 FONT_CANDIDATES = [
     Path("fonts/GenEiAntiqueNv5-M.ttf"),
     Path("/app/fonts/GenEiAntiqueNv5-M.ttf"),
@@ -245,6 +244,7 @@ class JapaneseVerticalHTMLGenerator:
         self.font_path = font_path or self._get_default_font_path()
         # BudouXパーサーの初期化
         self.budoux_parser = budoux.load_default_japanese_parser()
+        self._font_base64_cache: Optional[str] = None
 
     def _get_default_font_path(self) -> str:
         """デフォルトフォントパスを取得"""
@@ -294,27 +294,24 @@ class JapaneseVerticalHTMLGenerator:
         return "\n".join(processed_lines)
 
     def _encode_font_as_base64(self) -> Optional[str]:
-        """フォントファイルをBase64エンコード"""
+        """フォントファイルをBase64エンコード（結果をキャッシュ）"""
+        if self._font_base64_cache is not None:
+            return self._font_base64_cache
         if not self.font_path or not os.path.exists(self.font_path):
             return None
 
         try:
             with open(self.font_path, "rb") as f:
                 font_data = f.read()
-            return base64.b64encode(font_data).decode("utf-8")
+            self._font_base64_cache = base64.b64encode(font_data).decode("utf-8")
+            return self._font_base64_cache
         except Exception as e:
             logger.error(f"Failed to encode font: {e}")
             return None
 
     def _escape_html(self, text: str) -> str:
         """HTMLエスケープ処理"""
-        return (
-            text.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
-            .replace("'", "&#39;")
-        )
+        return html.escape(text, quote=True)
 
     def _process_text_for_vertical(self, text: str) -> str:
         """縦書き用のテキスト処理（縦中横など）"""
@@ -592,8 +589,7 @@ class HTMLToPNGConverter:
     @staticmethod
     async def convert_with_playwright(
         html_content: str,
-        output_path: str,
-    ) -> Tuple[float, int, int]:
+    ) -> Tuple[float, bytes]:
         """PlaywrightでHTMLをPNGに変換"""
         start_time = time.time()
 
@@ -601,7 +597,6 @@ class HTMLToPNGConverter:
             from playwright.async_api import async_playwright
 
             async with async_playwright() as p:
-                # Chromiumブラウザを起動
                 browser = await p.chromium.launch(
                     headless=True,
                     args=[
@@ -613,21 +608,14 @@ class HTMLToPNGConverter:
                 )
 
                 try:
-                    # ページを作成
                     page = await browser.new_page()
-
-                    # HTMLコンテンツを設定
                     await page.set_content(html_content, wait_until="domcontentloaded")
-
-                    # フォントの読み込み完了を待つ
                     await page.wait_for_function("() => document.fonts.ready")
-
-                    # ページの背景を確実に透明にする
-                    await page.evaluate("""
+                    await page.evaluate(
+                        """
                         () => {
                             document.body.style.backgroundColor = 'transparent';
                             document.documentElement.style.backgroundColor = 'transparent';
-                            // すべての要素の背景を透明に
                             const elements = document.querySelectorAll('*');
                             elements.forEach(el => {
                                 const computed = window.getComputedStyle(el);
@@ -637,33 +625,13 @@ class HTMLToPNGConverter:
                                 }
                             });
                         }
-                    """)
-
-                    # レイアウトの安定化を待つ
-                    await page.wait_for_timeout(500)
-
-                    # スクリーンショットを撮影
-                    await page.screenshot(
-                        path=output_path,
+                    """
+                    )
+                    screenshot_bytes = await page.screenshot(
                         full_page=True,
                         type="png",
                         omit_background=True,
                     )
-
-                    # 実際のコンテンツサイズを取得
-                    dimensions = await page.evaluate("""
-                        () => {
-                            const container = document.querySelector('.vertical-text-container');
-                            return {
-                                width: container.scrollWidth,
-                                height: container.scrollHeight
-                            };
-                        }
-                    """)
-
-                    actual_width = dimensions["width"]
-                    actual_height = dimensions["height"]
-
                 finally:
                     await browser.close()
 
@@ -672,32 +640,21 @@ class HTMLToPNGConverter:
             logger.error(f"Error type: {type(e).__name__}")
             raise
 
-        return (time.time() - start_time) * 1000, actual_width, actual_height
+        return (time.time() - start_time) * 1000, screenshot_bytes
 
 
-def trim_image(image_path: str) -> Tuple[Image.Image, bool]:
+def trim_image(image_bytes: bytes) -> Tuple[Image.Image, bool]:
     """画像の余白をトリミング（文字列をピッタリ囲む）"""
     try:
-        img = Image.open(image_path)
-
-        # 既にRGBAの場合はそのまま使用
+        img = Image.open(io.BytesIO(image_bytes))
         if img.mode != "RGBA":
             img = img.convert("RGBA")
 
-        # 画像の境界ボックスを取得（非透明部分）
         bbox = img.getbbox()
-
         if bbox:
-            # 余白なしでピッタリトリミング
-            x1, y1, x2, y2 = bbox
-
-            # トリミング
-            trimmed = img.crop((x1, y1, x2, y2))
+            trimmed = img.crop(bbox)
             return trimmed, True
-
-        # トリミングの必要なし
         return img, False
-
     except Exception as e:
         logger.error(f"Failed to trim image: {e}")
         raise
@@ -727,23 +684,13 @@ async def render_vertical_text(request: VerticalTextRequest):
             max_chars_per_line=request.max_chars_per_line,
         )
 
-        # 一時ファイルパス
-        temp_png = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-        temp_png_path = temp_png.name
-        temp_png.close()
-
         # Playwrightで変換実行
-        (
-            processing_time,
-            actual_width,
-            actual_height,
-        ) = await converter.convert_with_playwright(
-            html_content,
-            temp_png_path,
+        processing_time, screenshot_bytes = await converter.convert_with_playwright(
+            html_content
         )
 
         # 画像のトリミング処理
-        img, trimmed = trim_image(temp_png_path)
+        img, trimmed = trim_image(screenshot_bytes)
 
         # トリミングされた画像をバイトデータとして保存
         img_byte_arr = io.BytesIO()
@@ -754,9 +701,6 @@ async def render_vertical_text(request: VerticalTextRequest):
 
         # Base64エンコード
         image_base64 = base64.b64encode(image_data).decode("utf-8")
-
-        # 一時ファイルを削除
-        os.unlink(temp_png_path)
 
         return VerticalTextResponse(
             image_base64=image_base64,
