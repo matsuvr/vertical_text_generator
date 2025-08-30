@@ -1,22 +1,11 @@
 # Google Cloud Run用 Dockerfile
 FROM python:3.11-slim
 
-# 必要なシステムパッケージをインストール
-RUN apt-get update && apt-get install -y \
-    # Playwright/Chrome用
-    wget \
-    gnupg \
-    ca-certificates \
-    # 日本語フォント
+# 必要なシステムパッケージをインストール（最小構成）
+RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto-cjk \
     fonts-noto-cjk-extra \
     fonts-liberation \
-    # その他の依存関係
-    gcc \
-    g++ \
-    libfreetype6-dev \
-    curl \
-    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # 作業ディレクトリ
@@ -25,13 +14,10 @@ WORKDIR /app
 # フォントディレクトリを作成
 RUN mkdir -p /app/fonts
 
-# Pythonの依存関係をインストール
+# Pythonの依存関係とPlaywrightブラウザをインストール
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Playwrightのブラウザをインストール
-RUN playwright install chromium
-RUN playwright install-deps chromium
+RUN pip install --no-cache-dir -r requirements.txt && \
+    playwright install --with-deps chromium
 
 # アプリケーションファイルをコピー
 COPY . .
@@ -54,3 +40,4 @@ EXPOSE 8080
 
 # アプリケーション起動（Cloud Run用にポート番号を環境変数から取得）
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]
+
