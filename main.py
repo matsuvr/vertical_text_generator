@@ -589,7 +589,7 @@ class HTMLToPNGConverter:
     @staticmethod
     async def convert_with_playwright(
         html_content: str,
-    ) -> Tuple[float, bytes]:
+    ) -> Tuple[float, bytes, int, int]:
         """PlaywrightでHTMLをPNGに変換"""
         start_time = time.time()
 
@@ -632,6 +632,20 @@ class HTMLToPNGConverter:
                         type="png",
                         omit_background=True,
                     )
+                    
+                    # 実際のコンテンツサイズを取得
+                    dimensions = await page.evaluate("""
+                        () => {
+                            const container = document.querySelector('.vertical-text-container');
+                            return {
+                                width: container.scrollWidth,
+                                height: container.scrollHeight
+                            };
+                        }
+                    """)
+                    
+                    actual_width = dimensions["width"]
+                    actual_height = dimensions["height"]
                 finally:
                     await browser.close()
 
@@ -640,7 +654,7 @@ class HTMLToPNGConverter:
             logger.error(f"Error type: {type(e).__name__}")
             raise
 
-        return (time.time() - start_time) * 1000, screenshot_bytes
+        return (time.time() - start_time) * 1000, screenshot_bytes, actual_width, actual_height
 
 
 def trim_image(image_bytes: bytes) -> Tuple[Image.Image, bool]:
@@ -685,7 +699,12 @@ async def render_vertical_text(request: VerticalTextRequest):
         )
 
         # Playwrightで変換実行
-        processing_time, screenshot_bytes = await converter.convert_with_playwright(
+        (
+            processing_time,
+            screenshot_bytes,
+            actual_width,
+            actual_height,
+        ) = await converter.convert_with_playwright(
             html_content
         )
 
