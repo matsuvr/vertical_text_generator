@@ -10,7 +10,7 @@ import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Literal, Optional, Tuple
 
 import budoux
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -41,7 +41,6 @@ FONT_MAP = {
 }
 FONT_CANDIDATES = [
     DEFAULT_FONT_PATH,
-    Path("/app/fonts/GenEiAntiqueNv5-M.ttf"),
     Path("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"),
     Path("/System/Library/Fonts/Hiragino Sans GB.ttc"),  # macOS
     Path("C:/Windows/Fonts/msgothic.ttc"),  # Windows
@@ -53,9 +52,12 @@ def select_font_path(font_name: Optional[str]) -> Optional[str]:
     if not font_name:
         return None
     path = FONT_MAP.get(font_name.lower())
-    if path and path.exists():
-        return str(path)
-    if font_name:
+    if path:
+        if path.exists():
+            return str(path)
+        else:
+            logger.warning(f"Font file for '{font_name}' not found at {path}, using default font")
+    else:
         logger.warning(f"Invalid font specified: {font_name}, using default font")
     return None
 
@@ -218,7 +220,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 # リクエストモデル
 class VerticalTextRequest(BaseModel):
     text: str = Field(..., description="レンダリングするテキスト")
-    font: Optional[str] = Field(
+    font: Optional[Literal["gothic", "mincho"]] = Field(
         default=None,
         description="使用するフォント ('gothic' または 'mincho')",
     )
@@ -411,7 +413,7 @@ class JapaneseVerticalHTMLGenerator:
             return ""
         return f"""
             @font-face {{
-                font-family: 'GenEiAntique';
+                font-family: 'VerticalTextFont';
                 src: url(data:font/ttf;base64,{font_base64}) format('truetype');
                 font-display: block;
             }}
@@ -524,7 +526,7 @@ class JapaneseVerticalHTMLGenerator:
         .vertical-text-content {{
             writing-mode: vertical-rl;
             text-orientation: mixed;
-            font-family: 'GenEiAntique', 'Noto Sans CJK JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+            font-family: 'VerticalTextFont', 'Noto Sans CJK JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
             font-size: {font_size}px;
             line-height: {line_height};
             letter-spacing: {letter_spacing}em;
