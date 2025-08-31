@@ -7,7 +7,7 @@ Cloud Runなどのサーバーレス環境にデプロイしてWeb APIとして�
 
 - 🎨 **高品質レンダリング**: Chrome Headlessによる正確な縦書き表示
 - 📝 **日本語最適化**: 縦中横、三点リーダー、約物の適切な処理
-- 🔤 **フォント対応**: 源暎アンチックフォント対応（Noto Sans CJK JPフォールバック）
+- 🔤 **フォント対応**: 源暎アンチック（デフォルト）、源暎ゴシック・源暎筑後明朝の指定に対応（Noto Sans CJK JPフォールバック）
 - ✂️ **自動改行**: BudouXによる自然な日本語改行
 - 📐 **自動サイズ調整**: テキスト量に応じた画像サイズの完全自動調整
 - 🖼️ **ピッタリトリミング**: 文字列を余白なく囲む自動トリミング
@@ -126,7 +126,7 @@ curl -X POST http://localhost:8000/render \
   -H "Authorization: Bearer your-secure-random-token-here" \
   -H "Content-Type: application/json" \
   --data-binary @- <<EOF
-{"text":"こんにちは、世界！\n日本語の縦書きです。","font_size":24,"max_chars_per_line":10}
+{"text":"こんにちは、世界！\n日本語の縦書きです。","font":"gothic","font_size":24,"max_chars_per_line":10}
 EOF
 ```
 
@@ -135,7 +135,7 @@ EOF
 curl -X POST http://localhost:8000/render \
   -H "Authorization: Bearer your-secure-random-token-here" \
   -H "Content-Type: application/json" \
-  -d "{\"text\":\"こんにちは、世界！\\n日本語の縦書きです。\",\"font_size\":24,\"max_chars_per_line\":10}"
+  -d "{\"text\":\"こんにちは、世界！\\n日本語の縦書きです。\",\"font\":\"gothic\",\"font_size\":24,\"max_chars_per_line\":10}"
 ```
 
 **方法3: ファイル経由（最も確実）**
@@ -144,6 +144,7 @@ curl -X POST http://localhost:8000/render \
 cat > request.json <<EOF
 {
   "text": "こんにちは、世界！\n日本語の縦書きです。",
+  "font": "gothic",
   "font_size": 24,
   "max_chars_per_line": 10
 }
@@ -165,6 +166,7 @@ curl -X POST http://localhost:8000/render \
   -H "Content-Type: application/json" \
   -d '{
     "text": "こんにちは、世界！\n日本語の縦書きです。",
+    "font": "gothic",
     "font_size": 24,
     "max_chars_per_line": 10
   }'
@@ -176,7 +178,7 @@ curl -X POST http://localhost:8000/render \
 curl -X POST http://localhost:8000/render ^
   -H "Authorization: Bearer your-secure-random-token-here" ^
   -H "Content-Type: application/json" ^
-  -d "{\"text\":\"こんにちは、世界！\\n日本語の縦書きです。\",\"font_size\":24,\"max_chars_per_line\":10}"
+  -d "{\"text\":\"こんにちは、世界！\\n日本語の縦書きです。\",\"font\":\"gothic\",\"font_size\":24,\"max_chars_per_line\":10}"
 ```
 
 #### Windows PowerShell
@@ -189,6 +191,7 @@ $headers = @{
 
 $body = @{
     text = "こんにちは、世界！`n日本語の縦書きです。"
+    font = "gothic"
     font_size = 24
     max_chars_per_line = 10
 } | ConvertTo-Json
@@ -205,7 +208,7 @@ curl -X POST http://localhost:8000/render \
   -H "Authorization: Bearer your-secure-random-token-here" \
   -H "Content-Type: application/json" \
   --data-binary @- <<EOF | python -c "import json,base64,sys;d=json.load(sys.stdin);open('output.png','wb').write(base64.b64decode(d['image_base64']))"
-{"text":"テスト","font_size":20}
+{"text":"テスト","font":"gothic","font_size":20}
 EOF
 ```
 
@@ -216,7 +219,7 @@ curl -X POST http://localhost:8000/render \
   -H "Authorization: Bearer your-secure-random-token-here" \
   -H "Content-Type: application/json" \
   --data-binary @- <<EOF | jq .
-{"text":"テスト","font_size":20}
+{"text":"テスト","font":"gothic","font_size":20}
 EOF
 ```
 

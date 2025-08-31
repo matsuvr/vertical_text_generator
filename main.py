@@ -10,7 +10,7 @@ import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Dict, Literal, Optional, Tuple
 
 import budoux
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -33,14 +33,33 @@ security = HTTPBearer(auto_error=False)
 # 環境変数からトークンを取得 (デフォルト値を設定)
 API_TOKEN = os.getenv("API_TOKEN", "your-secret-token-here")
 
-# フォント候補パス
+# フォント関連の定義
+DEFAULT_FONT_PATH = Path("fonts/GenEiAntiqueNv5-M.ttf")
+FONT_MAP = {
+    "gothic": Path("fonts/GenEiMGothic2-Regular.ttf"),
+    "mincho": Path("fonts/GenEiChikugoMin3-R.ttf"),
+}
 FONT_CANDIDATES = [
-    Path("fonts/GenEiAntiqueNv5-M.ttf"),
-    Path("/app/fonts/GenEiAntiqueNv5-M.ttf"),
+    DEFAULT_FONT_PATH,
     Path("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"),
     Path("/System/Library/Fonts/Hiragino Sans GB.ttc"),  # macOS
     Path("C:/Windows/Fonts/msgothic.ttc"),  # Windows
 ]
+
+
+def select_font_path(font_name: Optional[str]) -> Optional[str]:
+    """フォント名からフォントパスを解決"""
+    if not font_name:
+        return None
+    path = FONT_MAP.get(font_name.lower())
+    if path:
+        if path.exists():
+            return str(path)
+        else:
+            logger.warning(f"Font file for '{font_name}' not found at {path}, using default font")
+    else:
+        logger.warning(f"Invalid font specified: {font_name}, using default font")
+    return None
 
 
 class ErrorResponse(BaseModel):
@@ -201,6 +220,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 # リクエストモデル
 class VerticalTextRequest(BaseModel):
     text: str = Field(..., description="レンダリングするテキスト")
+    font: Optional[Literal["gothic", "mincho"]] = Field(
+        default=None,
+        description="使用するフォント ('gothic' または 'mincho')",
+    )
     font_size: int = Field(default=20, ge=8, le=100, description="フォントサイズ")
     line_height: float = Field(default=1.6, ge=1.0, le=3.0, description="行間")
     letter_spacing: float = Field(
@@ -244,7 +267,7 @@ class JapaneseVerticalHTMLGenerator:
         self.font_path = font_path or self._get_default_font_path()
         # BudouXパーサーの初期化
         self.budoux_parser = budoux.load_default_japanese_parser()
-        self._font_base64_cache: Optional[str] = None
+        self._font_base64_cache: Dict[str, str] = {}
 
     def _get_default_font_path(self) -> str:
         """デフォルトフォントパスを取得"""
@@ -293,18 +316,20 @@ class JapaneseVerticalHTMLGenerator:
 
         return "\n".join(processed_lines)
 
-    def _encode_font_as_base64(self) -> Optional[str]:
+    def _encode_font_as_base64(self, font_path: Optional[str] = None) -> Optional[str]:
         """フォントファイルをBase64エンコード（結果をキャッシュ）"""
-        if self._font_base64_cache is not None:
-            return self._font_base64_cache
-        if not self.font_path or not os.path.exists(self.font_path):
+        path = font_path or self.font_path
+        if not path or not os.path.exists(path):
             return None
-
+        cached = self._font_base64_cache.get(path)
+        if cached is not None:
+            return cached
         try:
-            with open(self.font_path, "rb") as f:
+            with open(path, "rb") as f:
                 font_data = f.read()
-            self._font_base64_cache = base64.b64encode(font_data).decode("utf-8")
-            return self._font_base64_cache
+            encoded = base64.b64encode(font_data).decode("utf-8")
+            self._font_base64_cache[path] = encoded
+            return encoded
         except Exception as e:
             logger.error(f"Failed to encode font: {e}")
             return None
@@ -388,7 +413,7 @@ class JapaneseVerticalHTMLGenerator:
             return ""
         return f"""
             @font-face {{
-                font-family: 'GenEiAntique';
+                font-family: 'VerticalTextFont';
                 src: url(data:font/ttf;base64,{font_base64}) format('truetype');
                 font-display: block;
             }}
@@ -403,6 +428,7 @@ class JapaneseVerticalHTMLGenerator:
         padding: int = 20,
         use_tategaki_js: bool = False,
         max_chars_per_line: Optional[int] = None,
+        font_path: Optional[str] = None,
     ) -> str:
         """縦書きHTMLを生成"""
         # BudouXによる自動改行処理
@@ -410,7 +436,7 @@ class JapaneseVerticalHTMLGenerator:
             text = self._apply_budoux_line_breaks(text, max_chars_per_line)
 
         # フォントのBase64エンコード
-        font_base64 = self._encode_font_as_base64()
+        font_base64 = self._encode_font_as_base64(font_path)
 
         # テキスト処理
         processed_text = self._process_text_for_vertical(text)
@@ -500,7 +526,7 @@ class JapaneseVerticalHTMLGenerator:
         .vertical-text-content {{
             writing-mode: vertical-rl;
             text-orientation: mixed;
-            font-family: 'GenEiAntique', 'Noto Sans CJK JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+            font-family: 'VerticalTextFont', 'Noto Sans CJK JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
             font-size: {font_size}px;
             line-height: {line_height};
             letter-spacing: {letter_spacing}em;
@@ -632,9 +658,10 @@ class HTMLToPNGConverter:
                         type="png",
                         omit_background=True,
                     )
-                    
+
                     # 実際のコンテンツサイズを取得
-                    dimensions = await page.evaluate("""
+                    dimensions = await page.evaluate(
+                        """
                         () => {
                             const container = document.querySelector('.vertical-text-container');
                             return {
@@ -642,8 +669,9 @@ class HTMLToPNGConverter:
                                 height: container.scrollHeight
                             };
                         }
-                    """)
-                    
+                    """
+                    )
+
                     actual_width = dimensions["width"]
                     actual_height = dimensions["height"]
                 finally:
@@ -654,7 +682,12 @@ class HTMLToPNGConverter:
             logger.error(f"Error type: {type(e).__name__}")
             raise
 
-        return (time.time() - start_time) * 1000, screenshot_bytes, actual_width, actual_height
+        return (
+            (time.time() - start_time) * 1000,
+            screenshot_bytes,
+            actual_width,
+            actual_height,
+        )
 
 
 def trim_image(image_bytes: bytes) -> Tuple[Image.Image, bool]:
@@ -687,6 +720,7 @@ converter = HTMLToPNGConverter()
 async def render_vertical_text(request: VerticalTextRequest):
     """縦書きテキストをレンダリング（認証必須）"""
     try:
+        font_path = select_font_path(request.font)
         # HTML生成
         html_content = html_generator.create_vertical_html(
             text=request.text,
@@ -696,6 +730,7 @@ async def render_vertical_text(request: VerticalTextRequest):
             padding=request.padding,
             use_tategaki_js=request.use_tategaki_js,
             max_chars_per_line=request.max_chars_per_line,
+            font_path=font_path,
         )
 
         # Playwrightで変換実行
@@ -704,9 +739,7 @@ async def render_vertical_text(request: VerticalTextRequest):
             screenshot_bytes,
             actual_width,
             actual_height,
-        ) = await converter.convert_with_playwright(
-            html_content
-        )
+        ) = await converter.convert_with_playwright(html_content)
 
         # 画像のトリミング処理
         img, trimmed = trim_image(screenshot_bytes)
@@ -782,14 +815,17 @@ async def debug_html(
     font_size: int = 20,
     use_tategaki_js: bool = False,
     max_chars_per_line: Optional[int] = None,
+    font: Optional[str] = None,
 ):
     """生成されるHTMLをデバッグ用に確認（認証必須）"""
     try:
+        font_path = select_font_path(font)
         html_content = html_generator.create_vertical_html(
             text=text,
             font_size=font_size,
             use_tategaki_js=use_tategaki_js,
             max_chars_per_line=max_chars_per_line,
+            font_path=font_path,
         )
         return HTMLResponse(content=html_content)
     except Exception:
