@@ -145,7 +145,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         code="VALIDATION_ERROR",
         message="Validation failed",
         correlationId=cid,
-        errors=exc.errors(),
+        errors=list(exc.errors()),
     )
     return JSONResponse(
         status_code=422,
