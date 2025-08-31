@@ -1,0 +1,176 @@
+name: 日本語縦書きAPI テスト
+
+# トリガー設定
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'main.py'
+      - 'test_api.py'
+      - 'requirements.txt'
+      - '.github/workflows/api-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'main.py'
+      - 'test_api.py'
+      - 'requirements.txt'
+      - '.github/workflows/api-tests.yml'
+  workflow_dispatch: # 手動実行を許可
+
+# 環境変数
+env:
+  API_TOKEN: ${{ secrets.API_TOKEN || 'your-secret-token-here' }}
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  api-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    services:
+      # PostgreSQL等のサービスが必要な場合はここに追加
+      
+    steps:
+    - name: リポジトリをチェックアウト
+      uses: actions/checkout@v4
+      
+    - name: Python環境をセットアップ
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        
+    - name: システム依存関係をインストール
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          fonts-noto-cjk \
+          fonts-liberation \
+          libnss3-dev \
+          libatk-bridge2.0-dev \
+          libdrm2 \
+          libxkbcommon-dev \
+          libgtk-3-dev \
+          libatspi2.0-dev \
+          xvfb
+          
+    - name: Python依存関係をインストール
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        # Playwright用ブラウザをインストール
+        playwright install chromium
+        
+    - name: フォントファイルの確認
+      run: |
+        ls -la fonts/ || echo "フォントディレクトリが見つかりません"
+        if [ ! -f "fonts/GenEiAntiqueNv5-M.ttf" ]; then
+          echo "警告: デフォルトフォントが見つかりません"
+        fi
+        
+    - name: APIサーバーをバックグラウンドで起動
+      run: |
+        python main.py &
+        sleep 10  # サーバー起動待ち
+        
+    - name: APIサーバーの起動確認
+      run: |
+        curl -f http://localhost:8000/health || exit 1
+        echo "APIサーバーが正常に起動しました"
+        
+    - name: APIテストを実行
+      run: |
+        python test_api.py
+        
+    - name: テスト結果をアップロード
+      if: always()  # テストが失敗してもアーティファクトをアップロード
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results-${{ github.run_number }}
+        path: |
+          test_output/
+          test_results/
+        retention-days: 7
+        
+    - name: テスト結果サマリーを生成
+      if: always()
+      run: |
+        echo "## API テスト結果 🚀" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "test_results/test_result_*.json" ]; then
+          RESULT_FILE=$(ls -t test_results/test_result_*.json | head -n 1)
+          SUCCESS_RATE=$(python -c "
+import json
+with open('$RESULT_FILE', 'r', encoding='utf-8') as f:
+    data = json.load(f)
+    print(f'{data[\"success_rate\"]:.1f}%')
+")
+          TOTAL_TESTS=$(python -c "
+import json
+with open('$RESULT_FILE', 'r', encoding='utf-8') as f:
+    data = json.load(f)
+    print(data['total_tests'])
+")
+          SUCCESS_COUNT=$(python -c "
+import json
+with open('$RESULT_FILE', 'r', encoding='utf-8') as f:
+    data = json.load(f)
+    print(data['success_count'])
+")
+          
+          echo "- **成功率**: $SUCCESS_RATE" >> $GITHUB_STEP_SUMMARY
+          echo "- **総テスト数**: $TOTAL_TESTS" >> $GITHUB_STEP_SUMMARY
+          echo "- **成功数**: $SUCCESS_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "- **失敗数**: $((TOTAL_TESTS - SUCCESS_COUNT))" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$SUCCESS_RATE" = "100.0%" ]; then
+            echo "- ✅ **全てのテストが成功しました！**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⚠️ **一部のテストが失敗しました**" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "- ❌ **テスト結果ファイルが見つかりません**" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "詳細なテスト結果は Artifacts をダウンロードしてご確認ください。" >> $GITHUB_STEP_SUMMARY
+
+  # 本格的なDocker環境でのテスト
+  docker-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'  # mainブランチへのpush時のみ
+    
+    steps:
+    - name: リポジトリをチェックアウト
+      uses: actions/checkout@v4
+      
+    - name: Docker Composeでテスト環境を起動
+      run: |
+        docker-compose -f docker-compose.yml up -d
+        
+    - name: コンテナの起動待ち
+      run: |
+        echo "コンテナの起動を待機中..."
+        for i in {1..30}; do
+          if curl -f http://localhost:8000/health; then
+            echo "コンテナが正常に起動しました"
+            break
+          fi
+          echo "待機中... ($i/30)"
+          sleep 10
+        done
+        
+    - name: Docker環境でのAPIテスト
+      run: |
+        # テストスクリプトを実行（直接実行）
+        python -m pip install requests
+        python test_api.py
+        
+    - name: Docker環境をクリーンアップ
+      if: always()
+      run: |
+        docker-compose -f docker-compose.yml down
+        docker system prune -f
