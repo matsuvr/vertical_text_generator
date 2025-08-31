@@ -6,6 +6,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto-cjk \
     fonts-noto-cjk-extra \
     fonts-liberation \
+    # Build dependencies for Pillow[raqm]
+    gcc g++ pkg-config libfreetype6-dev libharfbuzz-dev libfribidi-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # 作業ディレクトリ
