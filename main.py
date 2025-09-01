@@ -422,17 +422,14 @@ class JapaneseVerticalHTMLGenerator:
             # 注意: 長音記号「ー」(U+30FC) は含めない
             rotatable_pattern = r"([—―–−－─━⎯]+)"
 
-            def _dash_to_hbar(m: re.Match) -> str:
+            def _dash_to_rotate(m: re.Match) -> str:
                 out = []
                 for ch in m.group(1):
-                    # 罫線の太さを文字に応じて調整
-                    if ch == "━":
-                        out.append('<span class="hbar hbar--bold"></span>')
-                    else:
-                        out.append('<span class="hbar"></span>')
+                    # 縦組み対応していない棒状記号を90度回転
+                    out.append(f'<span class="rotate-90">{ch}</span>')
                 return "".join(out)
 
-            line = re.sub(rotatable_pattern, _dash_to_hbar, line)
+            line = re.sub(rotatable_pattern, _dash_to_rotate, line)
 
             processed_lines.append(line)
 
@@ -688,6 +685,8 @@ class HTMLToPNGConverter:
                         "--disable-setuid-sandbox",
                         "--font-render-hinting=none",
                         "--disable-font-subpixel-positioning",
+                        "--disable-dbus",
+                        "--disable-features=VizDisplayCompositor",
                     ],
                 )
 

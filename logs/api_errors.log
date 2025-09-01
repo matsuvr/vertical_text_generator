@@ -100,3 +100,116 @@ Traceback (most recent call last):
 TypeError: Object of type ValueError is not JSON serializable
 2025-09-01 07:40:33,102 - main - ERROR - [VALIDATION_ERROR] Validation failed | CID: 8355d85cf8c6431cae0bd4381e775500 | Path: http://100.64.143.61:8000/render | Errors: [{'type': 'value_error', 'loc': ('body', 'text'), 'msg': 'Value error, テキストが空です', 'input': '', 'ctx': {'error': ValueError('テキストが空です')}}] | Body: {"text":"","font_size":20}
 2025-09-01 07:40:43,887 - main - ERROR - [UNAUTHORIZED] Unauthorized | CID: 45599eae29e24b37bb04f21bf13b8665 | Path: http://100.64.143.61:8000/render | Status: 401 | Detail: Unauthorized
+2025-09-01 08:50:43,648 - main - ERROR - [PLAYWRIGHT_ERROR] Playwright conversion failed: BrowserType.launch: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --user-data-dir=/tmp/playwright_chromiumdev_profile-cBu8sZ --remote-debugging-pipe --no-startup-window
+<launched> pid=1493
+[pid=1493][err] [0901/085043.314196:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=1493][err] [0901/085043.316571:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=1493][err] [0901/085043.316652:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+Call log:
+  - <launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --user-data-dir=/tmp/playwright_chromiumdev_profile-cBu8sZ --remote-debugging-pipe --no-startup-window
+  - <launched> pid=1493
+  - [pid=1493][err] [0901/085043.314196:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+  - [pid=1493][err] [0901/085043.316571:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+  - [pid=1493][err] [0901/085043.316652:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+  - [pid=1493] <gracefully close start>
+  - [pid=1493] <kill>
+  - [pid=1493] <will force kill>
+  - [pid=1493] <process did exit: exitCode=null, signal=SIGSEGV>
+  - [pid=1493] starting temporary directories cleanup
+  - [pid=1493] finished temporary directories cleanup
+  - [pid=1493] <gracefully close end>
+ | Error type: TargetClosedError | HTML content length: 12201024 | Browser args: --no-sandbox,--disable-setuid-sandbox,--font-render-hinting=none,--disable-font-subpixel-positioning
+Traceback (most recent call last):
+  File "/app/main.py", line 684, in convert_with_playwright
+    browser = await p.chromium.launch(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/async_api/_generated.py", line 14465, in launch
+    await self._impl_obj.launch(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_browser_type.py", line 98, in launch
+    await self._channel.send(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: BrowserType.launch: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --user-data-dir=/tmp/playwright_chromiumdev_profile-cBu8sZ --remote-debugging-pipe --no-startup-window
+<launched> pid=1493
+[pid=1493][err] [0901/085043.314196:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=1493][err] [0901/085043.316571:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=1493][err] [0901/085043.316652:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+Call log:
+  - <launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --user-data-dir=/tmp/playwright_chromiumdev_profile-cBu8sZ --remote-debugging-pipe --no-startup-window
+  - <launched> pid=1493
+  - [pid=1493][err] [0901/085043.314196:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+  - [pid=1493][err] [0901/085043.316571:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+  - [pid=1493][err] [0901/085043.316652:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+  - [pid=1493] <gracefully close start>
+  - [pid=1493] <kill>
+  - [pid=1493] <will force kill>
+  - [pid=1493] <process did exit: exitCode=null, signal=SIGSEGV>
+  - [pid=1493] starting temporary directories cleanup
+  - [pid=1493] finished temporary directories cleanup
+  - [pid=1493] <gracefully close end>
+
+2025-09-01 08:50:43,649 - main - ERROR - [RENDER_ERROR] Rendering failed: BrowserType.launch: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --user-data-dir=/tmp/playwright_chromiumdev_profile-cBu8sZ --remote-debugging-pipe --no-startup-window
+<launched> pid=1493
+[pid=1493][err] [0901/085043.314196:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=1493][err] [0901/085043.316571:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=1493][err] [0901/085043.316652:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+Call log:
+  - <launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --user-data-dir=/tmp/playwright_chromiumdev_profile-cBu8sZ --remote-debugging-pipe --no-startup-window
+  - <launched> pid=1493
+  - [pid=1493][err] [0901/085043.314196:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+  - [pid=1493][err] [0901/085043.316571:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+  - [pid=1493][err] [0901/085043.316652:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+  - [pid=1493] <gracefully close start>
+  - [pid=1493] <kill>
+  - [pid=1493] <will force kill>
+  - [pid=1493] <process did exit: exitCode=null, signal=SIGSEGV>
+  - [pid=1493] starting temporary directories cleanup
+  - [pid=1493] finished temporary directories cleanup
+  - [pid=1493] <gracefully close end>
+ | Error type: TargetClosedError | Request data - text_length: 34, font: None, font_size: 24, line_height: 1.6, letter_spacing: 0.0, padding: 12, use_tategaki_js: False, max_chars_per_line: 14 | Font path: None
+Traceback (most recent call last):
+  File "/app/main.py", line 810, in render_vertical_text
+    ) = await converter.convert_with_playwright(html_content)
+  File "/app/main.py", line 684, in convert_with_playwright
+    browser = await p.chromium.launch(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/async_api/_generated.py", line 14465, in launch
+    await self._impl_obj.launch(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_browser_type.py", line 98, in launch
+    await self._channel.send(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: BrowserType.launch: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --user-data-dir=/tmp/playwright_chromiumdev_profile-cBu8sZ --remote-debugging-pipe --no-startup-window
+<launched> pid=1493
+[pid=1493][err] [0901/085043.314196:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=1493][err] [0901/085043.316571:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=1493][err] [0901/085043.316652:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+Call log:
+  - <launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --user-data-dir=/tmp/playwright_chromiumdev_profile-cBu8sZ --remote-debugging-pipe --no-startup-window
+  - <launched> pid=1493
+  - [pid=1493][err] [0901/085043.314196:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+  - [pid=1493][err] [0901/085043.316571:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+  - [pid=1493][err] [0901/085043.316652:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+  - [pid=1493] <gracefully close start>
+  - [pid=1493] <kill>
+  - [pid=1493] <will force kill>
+  - [pid=1493] <process did exit: exitCode=null, signal=SIGSEGV>
+  - [pid=1493] starting temporary directories cleanup
+  - [pid=1493] finished temporary directories cleanup
+  - [pid=1493] <gracefully close end>
+
+2025-09-01 08:50:43,650 - main - ERROR - [INTERNAL_ERROR] Internal server error | CID: 007690ab182a4fb9a5b7bcdee833fc4a | Path: http://100.64.143.61:8000/render | Status: 500 | Detail: Internal server error
