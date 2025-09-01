@@ -318,3 +318,4 @@ Call log:
   - [pid=11714] <gracefully close end>
 
 2025-09-01 15:34:20,911 - main - ERROR - [INTERNAL_ERROR] Internal server error | CID: 4252a492bb0a4ccebf494f903f24e7f6 | Path: http://100.64.143.61:8000/render | Status: 500 | Detail: Internal server error
+2025-09-01 16:00:14,156 - main - ERROR - [NOT_FOUND] Not Found | CID: 3daf152ebaec4ceea27092f0456ef740 | Path: http://100.64.143.61:8000/favicon.ico | Status: 404 | Detail: Not Found

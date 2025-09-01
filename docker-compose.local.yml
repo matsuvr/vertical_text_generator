@@ -29,7 +29,6 @@ services:
     mem_limit: 8g         # コンテナのハード上限
     mem_reservation: 6g   # これ以下で動くのが理想
     memswap_limit: 8g     # スワップを使わせない（mem_limit と同値）
-    mem_swappiness: 10    # 低スワップ化
     ulimits:
       nofile:
         soft: 262144
