@@ -4,6 +4,7 @@ import base64
 import html
 import io
 import logging
+import logging.handlers
 import os
 import re
 import time
@@ -21,9 +22,44 @@ from PIL import Image
 from pydantic import BaseModel, Field, validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-# ログ設定
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# ログ設定（エラーのみ記録、1日でローテーション）
+def setup_error_only_logging():
+    """エラーのみを記録し1日でローテーションするログを設定"""
+    # ルートロガーを取得
+    root_logger = logging.getLogger()
+    
+    # ログファイルパス
+    log_file = "logs/api_errors.log"
+    
+    # ログディレクトリを作成（存在しない場合）
+    import os
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    
+    # ERRORレベル以上のみをファイルに記録するハンドラを設定
+    handler = logging.handlers.TimedRotatingFileHandler(
+        filename=log_file,
+        when='midnight',  # 毎日真夜中にローテーション
+        interval=1,       # 1日間隔
+        backupCount=1,    # 1日分のバックアップのみ保持（古いファイルは削除）
+        encoding='utf-8'
+    )
+    handler.setLevel(logging.ERROR)  # ハンドラレベルでERRORに制限
+    
+    # ログフォーマット設定
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    handler.setFormatter(formatter)
+    
+    # ルートロガーにハンドラを追加
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.DEBUG)  # ロガー自体は全レベル受け付け、ハンドラで制限
+    
+    # このモジュール用のロガーも取得して返す
+    logger = logging.getLogger(__name__)
+    return logger
+
+logger = setup_error_only_logging()
 
 app = FastAPI(title="HTMLベース日本語縦書きAPI")
 
@@ -56,9 +92,9 @@ def select_font_path(font_name: Optional[str]) -> Optional[str]:
         if path.exists():
             return str(path)
         else:
-            logger.warning(f"Font file for '{font_name}' not found at {path}, using default font")
+            logger.error(f"Font file for '{font_name}' not found at {path}, using default font")
     else:
-        logger.warning(f"Invalid font specified: {font_name}, using default font")
+        logger.error(f"Invalid font specified: {font_name}, using default font")
     return None
 
 
@@ -132,24 +168,43 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     except Exception:
         body = b""
     logger.error(
-        "[VALIDATION_ERROR] Validation failed",
-        extra={
-            "cid": cid,
-            "path": str(request.url),
-            "errors": exc.errors(),
-            "body": body.decode("utf-8", errors="ignore"),
-        },
+        f"[VALIDATION_ERROR] Validation failed | "
+        f"CID: {cid} | "
+        f"Path: {str(request.url)} | "
+        f"Errors: {str(exc.errors())} | "
+        f"Body: {body.decode('utf-8', errors='ignore')}"
     )
     headers = {"X-Correlation-ID": cid}
-    payload = ErrorResponse(
-        code="VALIDATION_ERROR",
-        message="Validation failed",
-        correlationId=cid,
-        errors=list(exc.errors()),
-    )
+    
+    # JSON直列化可能な形式にエラーを変換
+    safe_errors = []
+    for error in exc.errors():
+        safe_error = {}
+        # 基本的なフィールドのみコピー
+        safe_error['type'] = error.get('type', '')
+        safe_error['loc'] = error.get('loc', [])
+        safe_error['msg'] = error.get('msg', '')
+        safe_error['input'] = error.get('input', '')
+        # ctxからerrorを除外して安全な形式に変換
+        if 'ctx' in error:
+            ctx = error['ctx'].copy()
+            if 'error' in ctx:
+                ctx['error_str'] = str(ctx['error'])
+                del ctx['error']
+            safe_error['ctx'] = ctx
+        safe_errors.append(safe_error)
+    
+    # 手動でJSONレスポンスを構築
+    response_content = {
+        "code": "VALIDATION_ERROR",
+        "message": "Validation failed",
+        "correlationId": cid,
+        "errors": safe_errors
+    }
+    
     return JSONResponse(
         status_code=422,
-        content=payload.model_dump(by_alias=True),
+        content=response_content,
         headers=headers,
     )
 
@@ -171,13 +226,11 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
     # ログ(詳細はログにのみ)
     logger.error(
-        f"[{code}] {message}",
-        extra={
-            "cid": cid,
-            "path": str(request.url),
-            "status": status,
-            "detail": str(exc.detail),
-        },
+        f"[{code}] {message} | "
+        f"CID: {cid} | "
+        f"Path: {str(request.url)} | "
+        f"Status: {status} | "
+        f"Detail: {str(exc.detail)}"
     )
 
     headers = {"X-Correlation-ID": cid}
@@ -201,9 +254,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     """想定外の例外 → 500 統一スキーマ"""
     cid = _get_correlation_id(request)
     logger.error(
-        "[INTERNAL_ERROR] Unhandled exception",
-        exc_info=True,
-        extra={"cid": cid, "path": str(request.url)},
+        f"[INTERNAL_ERROR] Unhandled exception | "
+        f"CID: {cid} | "
+        f"Path: {str(request.url)}",
+        exc_info=True
     )
     payload = ErrorResponse(
         code="INTERNAL_ERROR",
@@ -273,10 +327,9 @@ class JapaneseVerticalHTMLGenerator:
         """デフォルトフォントパスを取得"""
         for path in FONT_CANDIDATES:
             if path.exists():
-                logger.info(f"Using font: {path}")
                 return str(path)
 
-        logger.warning("No Japanese font found, using system default")
+        logger.error("No Japanese font found, using system default")
         return ""
 
     def _apply_budoux_line_breaks(self, text: str, max_chars_per_line: int) -> str:
@@ -331,7 +384,12 @@ class JapaneseVerticalHTMLGenerator:
             self._font_base64_cache[path] = encoded
             return encoded
         except Exception as e:
-            logger.error(f"Failed to encode font: {e}")
+            logger.error(
+                f"[FONT_ENCODING_ERROR] Failed to encode font: {str(e)} | "
+                f"Error type: {type(e).__name__} | "
+                f"Font path: {path}",
+                exc_info=True
+            )
             return None
 
     def _escape_html(self, text: str) -> str:
@@ -678,8 +736,13 @@ class HTMLToPNGConverter:
                     await browser.close()
 
         except Exception as e:
-            logger.error(f"Playwright conversion failed: {e}")
-            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(
+                f"[PLAYWRIGHT_ERROR] Playwright conversion failed: {str(e)} | "
+                f"Error type: {type(e).__name__} | "
+                f"HTML content length: {len(html_content)} | "
+                f"Browser args: --no-sandbox,--disable-setuid-sandbox,--font-render-hinting=none,--disable-font-subpixel-positioning",
+                exc_info=True
+            )
             raise
 
         return (
@@ -703,7 +766,12 @@ def trim_image(image_bytes: bytes) -> Tuple[Image.Image, bool]:
             return trimmed, True
         return img, False
     except Exception as e:
-        logger.error(f"Failed to trim image: {e}")
+        logger.error(
+            f"[TRIM_ERROR] Failed to trim image: {str(e)} | "
+            f"Error type: {type(e).__name__} | "
+            f"Image bytes length: {len(image_bytes)}",
+            exc_info=True
+        )
         raise
 
 
@@ -762,13 +830,18 @@ async def render_vertical_text(request: VerticalTextRequest):
             trimmed=trimmed,
         )
 
-    except Exception:
+    except Exception as e:
         # 内部詳細はレスポンスに出さず、ログのみに残す
-        logger.error("[INTERNAL_ERROR] Rendering failed", exc_info=True)
-        # FastAPIのグローバルハンドラに任せず、明示的に統一スキーマで返す
-        # リクエストオブジェクトを取得するために関数シグネチャ変更を避け、Starletteのコンテキストがないため
-        # ここでは汎用の相関ID生成のみ行う
-        # ただしRequestにアクセスできないため、グローバルハンドラを使うのが安全
+        logger.error(
+            f"[RENDER_ERROR] Rendering failed: {str(e)} | "
+            f"Error type: {type(e).__name__} | "
+            f"Request data - text_length: {len(request.text)}, font: {request.font}, "
+            f"font_size: {request.font_size}, line_height: {request.line_height}, "
+            f"letter_spacing: {request.letter_spacing}, padding: {request.padding}, "
+            f"use_tategaki_js: {request.use_tategaki_js}, max_chars_per_line: {request.max_chars_per_line} | "
+            f"Font path: {select_font_path(request.font)}",
+            exc_info=True
+        )
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -828,8 +901,16 @@ async def debug_html(
             font_path=font_path,
         )
         return HTMLResponse(content=html_content)
-    except Exception:
-        logger.error("[INTERNAL_ERROR] debug_html failed", exc_info=True)
+    except Exception as e:
+        logger.error(
+            f"[DEBUG_HTML_ERROR] debug_html failed: {str(e)} | "
+            f"Error type: {type(e).__name__} | "
+            f"Query params - text: {text[:100] + '...' if len(text) > 100 else text}, "
+            f"font_size: {font_size}, use_tategaki_js: {use_tategaki_js}, "
+            f"max_chars_per_line: {max_chars_per_line}, font: {font} | "
+            f"Font path: {select_font_path(font)}",
+            exc_info=True
+        )
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
