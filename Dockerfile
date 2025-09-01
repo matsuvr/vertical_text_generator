@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-liberation \
     # Build dependencies for Pillow[raqm]
     gcc g++ pkg-config libfreetype6-dev libharfbuzz-dev libfribidi-dev \
+    # Dependencies required by headless Chromium/Playwright
+    libnss3 libxss1 libasound2 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxrandr2 libgbm1 \
+    fontconfig ca-certificates lsb-release wget dbus \
     && rm -rf /var/lib/apt/lists/*
 
 # 作業ディレクトリ

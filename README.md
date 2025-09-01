@@ -73,3 +73,23 @@ Authorization: Bearer your-secret-token-here
 - `GET /`: APIの基本情報（認証不要）
 - `GET /health`: ヘルスチェック（認証不要）
 - `GET /debug/html`: 生成されるHTMLを確認（要認証）
+
+## Docker: ローカル検証手順
+
+変更後にコンテナ内でChromiumが正常に起動するかを確かめるための簡単な手順:
+
+1. イメージをビルド:
+
+```bash
+docker build -t vertical-text-generator:local .
+```
+
+2. コンテナを起動（ポート8080を公開）:
+
+```bash
+docker run --rm -p 8080:8080 --shm-size=1g vertical-text-generator:local
+```
+
+注意点:
+- `--shm-size=1g` を付けると /dev/shm を増やし、Chromiumの共有メモリ不足によるクラッシュを防げます。
+- Cloud Run等にデプロイする場合、Dockerfileに必要なライブラリを追加済みなので、そのままデプロイできます。
