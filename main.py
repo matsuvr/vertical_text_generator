@@ -1,5 +1,10 @@
 """HTMLベース日本語縦書きAPI - Playwrightで高品質な縦書きレンダリング"""
 
+# (
+#     screenshot_bytes,
+#     _,
+#     _,
+# ) = self._converter.render_on_page(page, html_content)
 import asyncio
 import base64
 import html
@@ -20,6 +25,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from PIL import Image
+from playwright.async_api import async_playwright
 from pydantic import BaseModel, Field, validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -50,7 +56,7 @@ def setup_error_only_logging():
 
     # ログフォーマット設定
     formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
     handler.setFormatter(formatter)
 
@@ -76,6 +82,8 @@ API_TOKEN = os.getenv("API_TOKEN", "your-secret-token-here")
 # 同時実行数の制限（高負荷時のメモリピーク抑制）
 MAX_CONCURRENCY = int(os.getenv("MAX_CONCURRENCY", "2"))
 _convert_semaphore = asyncio.Semaphore(MAX_CONCURRENCY)
+# バッチ処理の最大アイテム数（環境変数で上書き可能）
+MAX_BATCH_ITEMS = int(os.getenv("MAX_BATCH_ITEMS", "50"))
 
 # フォント関連の定義
 DEFAULT_FONT_PATH = Path("fonts/GenEiAntiqueNv5-M.ttf")
@@ -177,9 +185,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     logger.error(
         f"[VALIDATION_ERROR] Validation failed | "
         f"CID: {cid} | "
-        f"Path: {str(request.url)} | "
-        f"Errors: {str(exc.errors())} | "
-        f"Body: {body.decode('utf-8', errors='ignore')}"
+        f"Path: {request.url!s} | "
+        f"Errors: {exc.errors()!s} | "
+        f"Body: {body.decode('utf-8', errors='ignore')}",
     )
     headers = {"X-Correlation-ID": cid}
 
@@ -235,9 +243,9 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     logger.error(
         f"[{code}] {message} | "
         f"CID: {cid} | "
-        f"Path: {str(request.url)} | "
+        f"Path: {request.url!s} | "
         f"Status: {status} | "
-        f"Detail: {str(exc.detail)}"
+        f"Detail: {exc.detail!s}",
     )
 
     headers = {"X-Correlation-ID": cid}
@@ -261,7 +269,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     """想定外の例外 → 500 統一スキーマ"""
     cid = _get_correlation_id(request)
     logger.error(
-        f"[INTERNAL_ERROR] Unhandled exception | CID: {cid} | Path: {str(request.url)}",
+        f"[INTERNAL_ERROR] Unhandled exception | CID: {cid} | Path: {request.url!s}",
         exc_info=True,
     )
     payload = ErrorResponse(
@@ -458,7 +466,7 @@ class JapaneseVerticalHTMLGenerator:
             return encoded
         except Exception as e:
             logger.error(
-                f"[FONT_ENCODING_ERROR] Failed to encode font: {str(e)} | "
+                f"[FONT_ENCODING_ERROR] Failed to encode font: {e!s} | "
                 f"Error type: {type(e).__name__} | "
                 f"Font path: {path}",
                 exc_info=True,
@@ -768,7 +776,7 @@ class HTMLToPNGConverter:
                     }
                 });
             }
-        """
+        """,
         )
         dimensions = await page.evaluate(
             """
@@ -779,7 +787,7 @@ class HTMLToPNGConverter:
                     height: Math.ceil(container.scrollHeight)
                 };
             }
-        """
+        """,
         )
         MAX_DIM = 8000
         actual_width = max(
@@ -793,6 +801,10 @@ class HTMLToPNGConverter:
         locator = page.locator(".vertical-text-container")
         screenshot_bytes = await locator.screenshot(type="png", omit_background=True)
         return screenshot_bytes, actual_width, actual_height
+
+    async def render_on_page(self, page, html_content: str) -> Tuple[bytes, int, int]:
+        """公開用のラッパー。内部のプライベート実装を呼び出す。"""
+        return await HTMLToPNGConverter._render_on_page(page, html_content)
 
     @staticmethod
     async def convert_with_playwright(
@@ -827,14 +839,14 @@ class HTMLToPNGConverter:
                     try:
                         # create page with a reasonable default timeout and set content
                         page = await browser.new_page(
-                            viewport={"width": 10, "height": 10}
+                            viewport={"width": 10, "height": 10},
                         )
                         page.set_default_navigation_timeout(30_000)
                         (
                             screenshot_bytes,
                             actual_width,
                             actual_height,
-                        ) = await HTMLToPNGConverter._render_on_page(page, html_content)
+                        ) = await converter.render_on_page(page, html_content)
                     finally:
                         try:
                             if page is not None:
@@ -845,7 +857,7 @@ class HTMLToPNGConverter:
 
         except Exception as e:
             logger.error(
-                f"[PLAYWRIGHT_ERROR] Playwright conversion failed: {str(e)} | "
+                f"[PLAYWRIGHT_ERROR] Playwright conversion failed: {e!s} | "
                 f"Error type: {type(e).__name__} | "
                 f"HTML content length: {len(html_content)} | "
                 f"Browser args: --no-sandbox,--disable-setuid-sandbox,--font-render-hinting=none,--disable-font-subpixel-positioning",
@@ -875,7 +887,7 @@ def trim_image(image_bytes: bytes) -> Tuple[Image.Image, bool]:
         return img, False
     except Exception as e:
         logger.error(
-            f"[TRIM_ERROR] Failed to trim image: {str(e)} | "
+            f"[TRIM_ERROR] Failed to trim image: {e!s} | "
             f"Error type: {type(e).__name__} | "
             f"Image bytes length: {len(image_bytes)}",
             exc_info=True,
@@ -890,7 +902,9 @@ class VerticalTextRendererService:
     """縦書きレンダリング処理を提供するサービス"""
 
     def __init__(
-        self, html_gen: JapaneseVerticalHTMLGenerator, conv: HTMLToPNGConverter
+        self,
+        html_gen: JapaneseVerticalHTMLGenerator,
+        conv: HTMLToPNGConverter,
     ):
         self._html_gen = html_gen
         self._converter = conv
@@ -924,8 +938,12 @@ class VerticalTextRendererService:
         finally:
             try:
                 img.close()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(
+                    "Failed to close image object: %s",
+                    e,
+                    exc_info=True,
+                )
             img_byte_arr.close()
 
         width, height = img.size
@@ -940,10 +958,10 @@ class VerticalTextRendererService:
         )
 
     async def render_batch(
-        self, items: List["BatchRenderItem"]
+        self,
+        items: List["BatchRenderItem"],
     ) -> List["BatchRenderItemResult"]:
         results: List[BatchRenderItemResult] = []
-        from playwright.async_api import async_playwright
 
         async with _convert_semaphore:
             async with async_playwright() as p:
@@ -962,10 +980,11 @@ class VerticalTextRendererService:
                     ],
                 )
                 try:
-                    for item in items:
-                        page = await browser.new_page(
-                            viewport={"width": 10, "height": 10}
-                        )
+                    # helper to render a single item using an existing page
+                    async def _render_one_item(
+                        item: BatchRenderItem,
+                        page,
+                    ) -> BatchRenderItemResult:
                         start_time = time.time()
                         try:
                             font_path = select_font_path(item.font)
@@ -980,10 +999,13 @@ class VerticalTextRendererService:
                                 font_path=font_path,
                                 embed_font=item.embed_font,
                             )
-                            screenshot_bytes, _, _ = (
-                                await self._converter._render_on_page(
-                                    page, html_content
-                                )
+                            (
+                                screenshot_bytes,
+                                _,
+                                _,
+                            ) = await self._converter.render_on_page(
+                                page,
+                                html_content,
                             )
                             img, trimmed = trim_image(screenshot_bytes)
                             img_byte_arr = io.BytesIO()
@@ -993,36 +1015,44 @@ class VerticalTextRendererService:
                             finally:
                                 try:
                                     img.close()
-                                except Exception:
-                                    pass
+                                except Exception as e:
+                                    logger.warning(
+                                        "Failed to close image object: %s",
+                                        e,
+                                        exc_info=True,
+                                    )
                                 img_byte_arr.close()
                             width, height = img.size
                             image_base64 = base64.b64encode(image_data).decode("utf-8")
                             processing_time = (time.time() - start_time) * 1000
-                            results.append(
-                                BatchRenderItemResult(
-                                    image_base64=image_base64,
-                                    width=width,
-                                    height=height,
-                                    processing_time_ms=processing_time,
-                                    trimmed=trimmed,
-                                )
+                            return BatchRenderItemResult(
+                                image_base64=image_base64,
+                                width=width,
+                                height=height,
+                                processing_time_ms=processing_time,
+                                trimmed=trimmed,
                             )
                         except Exception as e:
                             logger.error(
-                                f"[BATCH_RENDER_ERROR] Rendering failed: {str(e)} | "
+                                f"[BATCH_RENDER_ERROR] Rendering failed: {e!s} | "
                                 f"Error type: {type(e).__name__} | "
                                 f"Text length: {len(item.text)} | Font: {item.font}",
                                 exc_info=True,
                             )
-                            results.append(
-                                BatchRenderItemResult(
-                                    error=BatchRenderError(
-                                        code="RENDER_ERROR",
-                                        message="Rendering failed",
-                                    )
-                                )
+                            return BatchRenderItemResult(
+                                error=BatchRenderError(
+                                    code="RENDER_ERROR",
+                                    message="Rendering failed",
+                                ),
                             )
+
+                    for item in items:
+                        page = await browser.new_page(
+                            viewport={"width": 10, "height": 10},
+                        )
+                        try:
+                            result = await _render_one_item(item, page)
+                            results.append(result)
                         finally:
                             await page.close()
                 finally:
@@ -1048,7 +1078,7 @@ async def render_vertical_text(request: VerticalTextRequest):
         return await renderer_service.render(request)
     except Exception as e:
         logger.error(
-            f"[RENDER_ERROR] Rendering failed: {str(e)} | "
+            f"[RENDER_ERROR] Rendering failed: {e!s} | "
             f"Error type: {type(e).__name__} | "
             f"Request data - text_length: {len(request.text)}, font: {request.font}, "
             f"font_size: {request.font_size}, line_height: {request.line_height}, "
@@ -1067,8 +1097,11 @@ async def render_vertical_text(request: VerticalTextRequest):
 )
 async def render_vertical_text_batch(request: BatchRenderRequest):
     """複数テキストをまとめてレンダリング（認証必須）"""
-    if len(request.items) > 50:
-        raise HTTPException(status_code=400, detail="items length must be 50 or less")
+    if len(request.items) > MAX_BATCH_ITEMS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"items length must be {MAX_BATCH_ITEMS} or less",
+        )
 
     defaults = (
         request.defaults.model_dump(exclude_unset=True) if request.defaults else {}
@@ -1083,7 +1116,7 @@ async def render_vertical_text_batch(request: BatchRenderRequest):
         return BatchRenderResponse(results=results)
     except Exception as e:
         logger.error(
-            f"[BATCH_RENDER_ERROR] Batch rendering failed: {str(e)} | Error type: {type(e).__name__}",
+            f"[BATCH_RENDER_ERROR] Batch rendering failed: {e!s} | Error type: {type(e).__name__}",
             exc_info=True,
         )
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -1150,7 +1183,7 @@ async def debug_html(
         return HTMLResponse(content=html_content)
     except Exception as e:
         logger.error(
-            f"[DEBUG_HTML_ERROR] debug_html failed: {str(e)} | "
+            f"[DEBUG_HTML_ERROR] debug_html failed: {e!s} | "
             f"Error type: {type(e).__name__} | "
             f"Query params - text: {text[:100] + '...' if len(text) > 100 else text}, "
             f"font_size: {font_size}, use_tategaki_js: {use_tategaki_js}, "
