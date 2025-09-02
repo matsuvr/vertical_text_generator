@@ -12,18 +12,19 @@ echo "==================================="
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 cd "$SCRIPT_DIR"
 
-# 仮想環境の確認
-if [ ! -f ".venv/bin/python" ] && [ ! -f ".venv/Scripts/python.exe" ]; then
-    echo "エラー: 仮想環境が見つかりません"
-    echo ".venv/bin/python または .venv/Scripts/python.exe が存在することを確認してください"
-    exit 1
-fi
-
-# Pythonパスを設定
+# Pythonパスを設定: コンテナ内では /app/.venv に入っている可能性があるため複数候補を確認
+PYTHON_PATH=""
 if [ -f ".venv/bin/python" ]; then
     PYTHON_PATH=".venv/bin/python"
-else
+elif [ -f "/app/.venv/bin/python" ]; then
+    PYTHON_PATH="/app/.venv/bin/python"
+elif [ -f ".venv/Scripts/python.exe" ]; then
     PYTHON_PATH=".venv/Scripts/python.exe"
+fi
+
+if [ -z "$PYTHON_PATH" ]; then
+    echo "警告: 仮想環境が見つかりません。システムのpythonを使用します（非推奨）"
+    PYTHON_PATH="python"
 fi
 
 # APIサーバーが起動しているかチェック
@@ -42,7 +43,7 @@ echo
 
 # テスト実行
 echo "テスト実行中..."
-$PYTHON_PATH test_api.py
+"$PYTHON_PATH" test_api.py
 
 # 結果の表示
 echo
