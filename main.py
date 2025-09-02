@@ -846,7 +846,7 @@ class HTMLToPNGConverter:
                             screenshot_bytes,
                             actual_width,
                             actual_height,
-                        ) = await converter.render_on_page(page, html_content)
+                        ) = await HTMLToPNGConverter._render_on_page(page, html_content)
                     finally:
                         try:
                             if page is not None:
@@ -1046,15 +1046,16 @@ class VerticalTextRendererService:
                                 ),
                             )
 
-                    for item in items:
-                        page = await browser.new_page(
-                            viewport={"width": 10, "height": 10},
-                        )
-                        try:
+                    # ページを一度だけ生成し、ループ内で再利用
+                    page = await browser.new_page(
+                        viewport={"width": 10, "height": 10},
+                    )
+                    try:
+                        for item in items:
                             result = await _render_one_item(item, page)
                             results.append(result)
-                        finally:
-                            await page.close()
+                    finally:
+                        await page.close()
                 finally:
                     await browser.close()
 
