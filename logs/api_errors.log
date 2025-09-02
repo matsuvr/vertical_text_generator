@@ -791,3 +791,7 @@ Browser logs:
 2025-09-02 15:13:45,882 - main - ERROR - [INTERNAL_ERROR] Internal server error | CID: 1cb0104f7321445cba3b6b40c874de56 | Path: http://localhost:8000/render/batch | Status: 500 | Detail: Internal server error
 2025-09-02 16:00:29,977 - main - ERROR - [UNAUTHORIZED] Unauthorized | CID: 94797077792d4945a746e829751b681f | Path: http://localhost:8000/render | Status: 401 | Detail: Unauthorized
 2025-09-02 16:10:17,506 - main - ERROR - [UNAUTHORIZED] Unauthorized | CID: c7615abe15f440d49922a895b83774b6 | Path: http://localhost:8000/render | Status: 401 | Detail: Unauthorized
+2025-09-02 16:51:47,911 - main - ERROR - [UNAUTHORIZED] Unauthorized | CID: 39dac4a797a64ff39d841c0859f1d9a7 | Path: http://localhost:8000/render | Status: 401 | Detail: Unauthorized
+2025-09-02 16:51:47,917 - main - ERROR - [UNAUTHORIZED] Unauthorized | CID: 8463124bef9540a99d571c5cff67cf75 | Path: http://localhost:8000/render | Status: 401 | Detail: Unauthorized
+2025-09-02 16:51:47,921 - main - ERROR - [UNAUTHORIZED] Unauthorized | CID: 110a1829808248c4adb50f24fe741b43 | Path: http://localhost:8000/render | Status: 401 | Detail: Unauthorized
+2025-09-02 16:51:47,925 - main - ERROR - [UNAUTHORIZED] Unauthorized | CID: daa4837f1e534f0391d4e456c2eccee5 | Path: http://localhost:8000/render/batch | Status: 401 | Detail: Unauthorized

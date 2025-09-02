@@ -27,4 +27,4 @@ services:
     # Chrome実行用の追加設定
     security_opt:
       - seccomp:unconfined
-    shm_size: 2gb  # Chrome用の共有メモリ
+    shm_size: 1gb  # Chrome用の共有メモリ

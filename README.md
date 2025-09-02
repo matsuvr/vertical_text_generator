@@ -116,7 +116,7 @@ Authorization: Bearer your-secret-token-here
 - `GET /debug/html`: 生成されるHTMLを確認（要認証）
 - `POST /render/batch`: 複数テキストをまとめてレンダリング（要認証）
 
-## Docker: ローカル検証手順
+## Docker: ローカル検証手順（gunicorn + uvicorn workers）
 
 変更後にコンテナ内でChromiumが正常に起動するかを確かめるための簡単な手順:
 
@@ -129,9 +129,40 @@ docker build -t vertical-text-generator:local .
 2. コンテナを起動（ポート8080を公開）:
 
 ```bash
-docker run --rm -p 8080:8080 --shm-size=1g vertical-text-generator:local
+docker run --rm -p 8080:8000 --shm-size=1g \
+  -e WEB_CONCURRENCY=4 \
+  -e PAGE_POOL_SIZE=2 \
+  vertical-text-generator:local
 ```
 
 注意点:
 - `--shm-size=1g` を付けると /dev/shm を増やし、Chromiumの共有メモリ不足によるクラッシュを防げます。
 - Cloud Run等にデプロイする場合、Dockerfileに必要なライブラリを追加済みなので、そのままデプロイできます。
+
+## 高負荷向けチューニング（起動時プレロード/常駐 + ワーカー）
+
+本リポジトリは以下の通り、フォントとPlaywrightをプロセス生存中ずっとメモリ常駐させ、大量リクエストを高速に捌く構成です。
+
+- フォント: `JapaneseVerticalHTMLGenerator` 初期化時に Base64 エンコードしてメモリキャッシュ（環境変数 `PRELOAD_FONTS=1`）。不足分メモリを先取り確保（`FONT_MEMORY_RESERVE_MB`）。
+- ブラウザ: Gunicornワーカー毎にFastAPI `startup`でPlaywrightを起動し、ページプールを用意（`PAGE_POOL_SIZE` はワーカー毎に適用）。
+- ページ事前作成: 起動時にプール容量まで `new_page` してキューに投入（`PRECREATE_PAGES=1`）。
+- ウォームアップ: 起動直後に軽いレンダリングを1回実行してJITやフォントを温め（`WARMUP_RENDER_ON_STARTUP=1`）。
+
+主要な環境変数（抜粋）:
+
+- `PRELOAD_FONTS`: 起動時にフォントをBase64化して全てメモリキャッシュ（既定: `1`）。
+- `FONT_MEMORY_RESERVE_MB`: フォントキャッシュ不足分をゼロ埋めで先取り確保（既定: `128`）。
+- `WEB_CONCURRENCY` : Gunicornワーカー数（既定: `4`）。
+- `PAGE_POOL_SIZE` : 1ワーカーあたりのPlaywrightページ数（既定: `2`）。
+- `PRECREATE_PAGES` : 起動時に `PAGE_POOL_SIZE` 個のページを先に作成（既定: `1`）。
+- `WARMUP_RENDER_ON_STARTUP` : 起動時に軽いレンダリングを1回（既定: `1`）。
+
+Gunicorn関連の追加ENV（任意）:
+- `GUNICORN_TIMEOUT`（既定: `180`）: リクエストのタイムアウト秒。
+- `GUNICORN_GRACEFUL_TIMEOUT`（既定: `30`）: 優雅なシャットダウン待ち秒。
+- `GUNICORN_KEEPALIVE`（既定: `5`）: keep-alive秒。
+- `GUNICORN_MAX_REQUESTS`（既定: `0` 無効）: メモリリーク対策のワーカー再起動間隔。必要なら `1000` など。
+
+メモ:
+- メモリとCPUに余裕がある場合は `WEB_CONCURRENCY` と `PAGE_POOL_SIZE` の積（=総ページ数）を増やすとスループットが上がります。目安: 総ページ <= CPUスレッド数〜2倍。
+- 各ワーカーは独立にChromiumを保持します。`WEB_CONCURRENCY` を増やすとブラウザプロセスも増えますが、障害分離・可用性が向上します。

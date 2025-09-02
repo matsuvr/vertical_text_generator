@@ -113,6 +113,19 @@ class PagePool:
         page.set_default_navigation_timeout(30_000)
         return page
 
+    async def precreate(self):
+        """容量までページを事前作成し、キューに投入してウォーム状態にする"""
+        async with self._lock:
+            to_create = max(0, self.capacity - self._created)
+            for _ in range(to_create):
+                try:
+                    page = await self._create_page()
+                    await self._queue.put(page)
+                    self._created += 1
+                except Exception:
+                    # 1つでも失敗してもサービスは続行
+                    logger.warning("Failed to precreate playwright page", exc_info=True)
+
     async def acquire(self):
         try:
             page = self._queue.get_nowait()
@@ -162,6 +175,13 @@ class BrowserManager:
                 )
             if cls._pool is None:
                 cls._pool = PagePool(cls._browser, capacity=max(1, pool_size))
+                # ページの事前作成（高スループット向け）
+                try:
+                    precreate = os.getenv("PRECREATE_PAGES", "1") not in ("0", "false", "False")
+                    if precreate:
+                        await cls._pool.precreate()
+                except Exception:
+                    logger.warning("Page precreation at startup failed", exc_info=True)
 
     @classmethod
     async def get_pool(cls) -> PagePool:
@@ -1207,6 +1227,30 @@ async def _on_startup():
     except ValueError:
         pool_size = MAX_CONCURRENCY
     await BrowserManager.start(pool_size)
+    # 軽いウォームアップ（任意）
+    try:
+        do_warmup = os.getenv("WARMUP_RENDER_ON_STARTUP", "1") not in ("0", "false", "False")
+        if do_warmup:
+            # ごく小さいレンダリングを1回実行してJITやフォント読み込みを温める
+            font_name, font_path = resolve_font_name_and_path(None)
+            html_content = html_generator.create_vertical_html(
+                text="起動確認",
+                font_size=16,
+                line_height=1.5,
+                letter_spacing=0.02,
+                padding=8,
+                use_tategaki_js=False,
+                max_chars_per_line=None,
+                font_path=font_path,
+            )
+            try:
+                # 実画像は保持せずに単純にパイプラインを1度通す
+                await converter.convert_with_playwright(html_content)
+            except Exception:
+                logger.warning("Warmup render failed; continuing", exc_info=True)
+    except Exception:
+        # 起動を妨げない
+        logger.warning("Warmup section failed", exc_info=True)
 
 
 @app.on_event("shutdown")
