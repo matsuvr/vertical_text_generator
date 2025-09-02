@@ -959,8 +959,8 @@ class VerticalTextRendererService:
 
     async def render_batch(
         self,
-        items: List["BatchRenderItem"],
-    ) -> List["BatchRenderItemResult"]:
+        items: List[BatchRenderItem],
+    ) -> List[BatchRenderItemResult]:
         results: List[BatchRenderItemResult] = []
 
         async with _convert_semaphore:
