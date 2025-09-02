@@ -14,8 +14,15 @@
 
 ### リクエスト
 
+- `items` 配列の最大長は 50。超過した場合は 400 Bad Request を返す。
+- `defaults` で共通のレンダリングパラメータを指定でき、各アイテムはそれを上書きする。
+
 ```jsonc
 {
+  "defaults": {
+    "font": "gothic",
+    "font_size": 20
+  },
   "items": [
     {
       "text": "吾輩は猫である。名前はまだ無い。",
@@ -25,17 +32,22 @@
       "letter_spacing": 0.1,
       "padding": 30,
       "use_tategaki_js": false,
-      "max_chars_per_line": 10,
+      "max_chars_per_line": 10
     },
     {
-      "text": "こんにちは世界",
-      "font": "gothic",
+      "text": "こんにちは世界"
     },
-  ],
+    {
+      "text": "フォントが存在しない例",
+      "font": "unknown_font"
+    }
+  ]
 }
 ```
 
 ### レスポンス
+
+- 各結果オブジェクトは成功時に画像情報を、失敗時に `error` フィールドを返す。
 
 ```jsonc
 {
@@ -45,16 +57,22 @@
       "width": 400,
       "height": 600,
       "processing_time_ms": 1234.5,
-      "trimmed": true,
+      "trimmed": true
     },
     {
       "image_base64": "...",
       "width": 120,
       "height": 200,
       "processing_time_ms": 456.7,
-      "trimmed": false,
+      "trimmed": false
     },
-  ],
+    {
+      "error": {
+        "code": "FONT_NOT_FOUND",
+        "message": "font 'unknown_font' is not available"
+      }
+    }
+  ]
 }
 ```
 
@@ -62,6 +80,7 @@
 
 - **ドメイン層分離**: レンダリング処理をサービスクラスに抽出し、単一テキストとバッチ処理の両方で再利用できるようにする。
 - **初期化の共通化**: ブラウザ・ページ・フォント読み込みはリクエスト単位で一度のみ実行する。
+- **パラメータ共通化**: `defaults` を各アイテムにマージし、冗長な指定を避ける。
 - **エラーハンドリング**: 各アイテムの失敗が他に波及しないよう、結果配列には `error` フィールドを含める。HTTP ステータスは 200 を維持。
 - **並列処理の検討**: 同一ブラウザコンテキスト内でのシーケンシャル処理を基本とし、将来的な並列化に備えて非同期タスク化可能な設計にする。
 - **レート制御**: 既存の `MAX_CONCURRENCY` 制御を流用し、バッチ内でも過剰な同時実行を避ける。
