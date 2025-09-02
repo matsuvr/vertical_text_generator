@@ -10,15 +10,15 @@ import os
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 
 import requests
 
 # Windows環境での文字エンコーディング設定
 if sys.platform == "win32":
     import codecs
-    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer)
-    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer)
+
+    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.buffer)
+    sys.stderr = codecs.getwriter("utf-8")(sys.stderr.buffer)
 
 
 def check_api_status(api_url):
@@ -45,9 +45,9 @@ def test_endpoints(api_url, token):
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
-    
+
     print("\n=== エンドポイントテスト ===")
-    
+
     # ルートエンドポイント
     try:
         response = requests.get(f"{api_url}/")
@@ -58,13 +58,14 @@ def test_endpoints(api_url, token):
             print(f"[NG] GET / 失敗: {response.status_code}")
     except Exception as e:
         print(f"[NG] GET / エラー: {e}")
-    
+
     # デバッグエンドポイント
     try:
-        response = requests.get(f"{api_url}/debug/html", headers=headers, params={
-            "text": "デバッグテスト",
-            "font_size": 20
-        })
+        response = requests.get(
+            f"{api_url}/debug/html",
+            headers=headers,
+            params={"text": "デバッグテスト", "font_size": 20},
+        )
         if response.status_code == 200:
             print("[OK] GET /debug/html: HTMLレスポンス正常")
         else:
@@ -76,7 +77,7 @@ def test_endpoints(api_url, token):
 def test_auth(api_url):
     """認証のテスト"""
     print("\n=== 認証テスト ===")
-    
+
     # 認証なし
     try:
         response = requests.post(f"{api_url}/render", json={"text": "test"})
@@ -86,11 +87,13 @@ def test_auth(api_url):
             print(f"[NG] 認証なし: 期待値401, 実際{response.status_code}")
     except Exception as e:
         print(f"[NG] 認証なしテストエラー: {e}")
-    
+
     # 無効なトークン
     try:
         headers = {"Authorization": "Bearer invalid-token"}
-        response = requests.post(f"{api_url}/render", headers=headers, json={"text": "test"})
+        response = requests.post(
+            f"{api_url}/render", headers=headers, json={"text": "test"}
+        )
         if response.status_code == 401:
             print("[OK] 無効なトークン: 401 Unauthorized")
         else:
@@ -102,26 +105,42 @@ def test_auth(api_url):
 def test_validation(api_url, token):
     """バリデーションのテスト"""
     print("\n=== バリデーションテスト ===")
-    
+
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
-    
+
     validation_tests = [
         {"name": "空のテキスト", "data": {"text": ""}, "expected": 422},
-        {"name": "無効なフォントサイズ", "data": {"text": "test", "font_size": 200}, "expected": 422},
-        {"name": "無効な行間", "data": {"text": "test", "line_height": 5.0}, "expected": 422},
-        {"name": "無効なフォント", "data": {"text": "test", "font": "invalid"}, "expected": 422},
+        {
+            "name": "無効なフォントサイズ",
+            "data": {"text": "test", "font_size": 200},
+            "expected": 422,
+        },
+        {
+            "name": "無効な行間",
+            "data": {"text": "test", "line_height": 5.0},
+            "expected": 422,
+        },
+        {
+            "name": "無効なフォント",
+            "data": {"text": "test", "font": "invalid"},
+            "expected": 422,
+        },
     ]
-    
+
     for test in validation_tests:
         try:
-            response = requests.post(f"{api_url}/render", headers=headers, json=test["data"])
+            response = requests.post(
+                f"{api_url}/render", headers=headers, json=test["data"]
+            )
             if response.status_code == test["expected"]:
                 print(f"[OK] {test['name']}: {response.status_code}")
             else:
-                print(f"[NG] {test['name']}: 期待値{test['expected']}, 実際{response.status_code}")
+                print(
+                    f"[NG] {test['name']}: 期待値{test['expected']}, 実際{response.status_code}"
+                )
         except Exception as e:
             print(f"[NG] {test['name']}エラー: {e}")
 
@@ -139,7 +158,7 @@ def test_api(api_url="http://localhost:8000", token=None):
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
-        "X-Correlation-ID": f"test-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        "X-Correlation-ID": f"test-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
     }
 
     # テストケース
@@ -213,32 +232,29 @@ def test_api(api_url="http://localhost:8000", token=None):
     # 結果保存用ディレクトリ
     output_dir = "test_output"
     os.makedirs(output_dir, exist_ok=True)
-    
+
     # テスト結果保存用ディレクトリ
     results_dir = "test_results"
     os.makedirs(results_dir, exist_ok=True)
 
-    print(f"\n=== レンダリングテスト ===")
+    print("\n=== レンダリングテスト ===")
     print(f"APIテスト開始: {api_url}")
     print(f"出力ディレクトリ: {output_dir}")
     print("-" * 50)
 
     test_results = []
     success_count = 0
-    
+
     for test in test_cases:
         print(f"\nテスト: {test['name']}")
         print(f"リクエスト: {json.dumps(test['data'], ensure_ascii=False, indent=2)}")
 
         test_start_time = time.time()
-        
+
         try:
             # APIリクエスト
             response = requests.post(
-                f"{api_url}/render",
-                headers=headers,
-                json=test["data"],
-                timeout=30
+                f"{api_url}/render", headers=headers, json=test["data"], timeout=30
             )
 
             if response.status_code == 200:
@@ -247,35 +263,39 @@ def test_api(api_url="http://localhost:8000", token=None):
 
                 # 画像をデコードして保存
                 image_data = base64.b64decode(result["image_base64"])
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"{output_dir}/{test['name']}_{timestamp}.png"
 
                 with open(filename, "wb") as f:
                     f.write(image_data)
 
                 test_time = time.time() - test_start_time
-                
+
                 print(f"[OK] 成功: {filename}")
                 print(f"  サイズ: {result['width']}x{result['height']} px")
                 print(f"  処理時間: {result['processing_time_ms']:.2f} ms")
                 print(f"  テスト時間: {test_time:.2f} s")
-                print(f"  トリミング: {'はい' if result.get('trimmed', False) else 'いいえ'}")
-                
+                print(
+                    f"  トリミング: {'はい' if result.get('trimmed', False) else 'いいえ'}"
+                )
+
                 # 相関IDの確認
-                correlation_id = response.headers.get('X-Correlation-ID')
+                correlation_id = response.headers.get("X-Correlation-ID")
                 if correlation_id:
                     print(f"  相関ID: {correlation_id}")
-                
-                test_results.append({
-                    "name": test['name'],
-                    "status": "success",
-                    "processing_time_ms": result['processing_time_ms'],
-                    "test_time_s": test_time,
-                    "width": result['width'],
-                    "height": result['height'],
-                    "trimmed": result.get('trimmed', False),
-                    "filename": filename
-                })
+
+                test_results.append(
+                    {
+                        "name": test["name"],
+                        "status": "success",
+                        "processing_time_ms": result["processing_time_ms"],
+                        "test_time_s": test_time,
+                        "width": result["width"],
+                        "height": result["height"],
+                        "trimmed": result.get("trimmed", False),
+                        "filename": filename,
+                    }
+                )
                 success_count += 1
 
             else:
@@ -284,26 +304,30 @@ def test_api(api_url="http://localhost:8000", token=None):
                 print(f"[NG] エラー: {response.status_code}")
                 print(f"  詳細: {response.text}")
                 print(f"  テスト時間: {test_time:.2f} s")
-                
-                test_results.append({
-                    "name": test['name'],
-                    "status": "error",
-                    "status_code": response.status_code,
-                    "test_time_s": test_time,
-                    "error": response.text
-                })
+
+                test_results.append(
+                    {
+                        "name": test["name"],
+                        "status": "error",
+                        "status_code": response.status_code,
+                        "test_time_s": test_time,
+                        "error": response.text,
+                    }
+                )
 
         except Exception as e:
             test_time = time.time() - test_start_time
             print(f"[NG] 例外: {type(e).__name__}: {e}")
             print(f"  テスト時間: {test_time:.2f} s")
-            
-            test_results.append({
-                "name": test['name'],
-                "status": "exception",
-                "test_time_s": test_time,
-                "exception": f"{type(e).__name__}: {e}"
-            })
+
+            test_results.append(
+                {
+                    "name": test["name"],
+                    "status": "exception",
+                    "test_time_s": test_time,
+                    "exception": f"{type(e).__name__}: {e}",
+                }
+            )
 
     # テスト結果サマリー
     print("\n" + "=" * 60)
@@ -313,69 +337,84 @@ def test_api(api_url="http://localhost:8000", token=None):
     print(f"成功: {success_count}")
     print(f"失敗: {len(test_cases) - success_count}")
     print(f"成功率: {success_count / len(test_cases) * 100:.1f}%")
-    
+
     # テスト結果をJSONで保存
-    result_file = f"{results_dir}/test_result_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    result_file = (
+        f"{results_dir}/test_result_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    )
     with open(result_file, "w", encoding="utf-8") as f:
-        json.dump({
-            "timestamp": datetime.now().isoformat(),
-            "api_url": api_url,
-            "total_tests": len(test_cases),
-            "success_count": success_count,
-            "success_rate": success_count / len(test_cases) * 100,
-            "results": test_results
-        }, f, ensure_ascii=False, indent=2)
-    
+        json.dump(
+            {
+                "timestamp": datetime.now().isoformat(),
+                "api_url": api_url,
+                "total_tests": len(test_cases),
+                "success_count": success_count,
+                "success_rate": success_count / len(test_cases) * 100,
+                "results": test_results,
+            },
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
+
     print(f"\n詳細結果: {result_file}")
     print("テスト完了")
 
 
 def run_performance_test(api_url, token, num_requests=5):
     """パフォーマンステスト"""
-    print(f"\n=== パフォーマンステスト ===")
+    print("\n=== パフォーマンステスト ===")
     print(f"同一リクエストを{num_requests}回実行")
-    
+
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
-    
+
     test_data = {
         "text": "パフォーマンステスト用のテキストです。\n複数行のテストを行います。",
         "font_size": 20,
         "max_chars_per_line": 15,
     }
-    
+
     times = []
     processing_times = []
-    
+
     for i in range(num_requests):
-        print(f"  リクエスト {i+1}/{num_requests}...", end=" ")
-        
+        print(f"  リクエスト {i + 1}/{num_requests}...", end=" ")
+
         start_time = time.time()
         try:
-            response = requests.post(f"{api_url}/render", headers=headers, json=test_data, timeout=30)
+            response = requests.post(
+                f"{api_url}/render", headers=headers, json=test_data, timeout=30
+            )
             if response.status_code == 200:
                 result = response.json()
                 total_time = time.time() - start_time
                 times.append(total_time)
-                processing_times.append(result['processing_time_ms'])
-                print(f"[OK] {total_time:.2f}s (処理: {result['processing_time_ms']:.2f}ms)")
+                processing_times.append(result["processing_time_ms"])
+                print(
+                    f"[OK] {total_time:.2f}s (処理: {result['processing_time_ms']:.2f}ms)"
+                )
             else:
                 print(f"[NG] エラー: {response.status_code}")
         except Exception as e:
             print(f"[NG] 例外: {e}")
-    
+
     if times:
-        print(f"\nパフォーマンス結果:")
-        print(f"  総時間 - 平均: {sum(times)/len(times):.2f}s, 最小: {min(times):.2f}s, 最大: {max(times):.2f}s")
-        print(f"  処理時間 - 平均: {sum(processing_times)/len(processing_times):.2f}ms, 最小: {min(processing_times):.2f}ms, 最大: {max(processing_times):.2f}ms")
+        print("\nパフォーマンス結果:")
+        print(
+            f"  総時間 - 平均: {sum(times) / len(times):.2f}s, 最小: {min(times):.2f}s, 最大: {max(times):.2f}s"
+        )
+        print(
+            f"  処理時間 - 平均: {sum(processing_times) / len(processing_times):.2f}ms, 最小: {min(processing_times):.2f}ms, 最大: {max(processing_times):.2f}ms"
+        )
 
 
 def main():
     """メイン関数"""
     api_url = "http://localhost:8000"
-    
+
     # コマンドライン引数からトークンを取得（オプション）
     token = sys.argv[1] if len(sys.argv) > 1 else None
     if not token:
@@ -384,7 +423,7 @@ def main():
     print("=== 日本語縦書きAPI 統合テスト ===")
     print(f"API URL: {api_url}")
     print(f"実行時刻: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    
+
     # APIの状態チェック
     if not check_api_status(api_url):
         print("\nAPIサーバーが起動していません")
@@ -392,14 +431,14 @@ def main():
         print("  1. docker-compose up -d")
         print("  2. python main.py")
         sys.exit(1)
-    
+
     # 各種テストを実行
     test_endpoints(api_url, token)
     test_auth(api_url)
     test_validation(api_url, token)
     test_api(api_url, token)
     run_performance_test(api_url, token)
-    
+
     print("\n" + "=" * 60)
     print("全テスト完了")
     print("=" * 60)
