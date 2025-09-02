@@ -11,7 +11,12 @@
       "Bash(python test:*)",
       "Bash(.venvScriptspython.exe test_api.py)",
       "Bash(.venv/Scripts/python.exe test_api.py:*)",
-      "Bash(.venv/Scripts/python.exe:*)"
+      "Bash(.venv/Scripts/python.exe:*)",
+      "WebFetch(domain:100.64.143.61)",
+      "Bash(docker exec:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker restart:*)",
+      "Bash(docker ps:*)"
     ],
     "deny": [],
     "ask": []

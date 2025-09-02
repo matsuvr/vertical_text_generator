@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # fonts
-fonts/GenEiAntiqueNv5-M.ttf
+*.ttf
 
 # .env
 .env
