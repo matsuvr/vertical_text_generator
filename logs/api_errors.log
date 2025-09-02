@@ -319,3 +319,9 @@ Call log:
 
 2025-09-01 15:34:20,911 - main - ERROR - [INTERNAL_ERROR] Internal server error | CID: 4252a492bb0a4ccebf494f903f24e7f6 | Path: http://100.64.143.61:8000/render | Status: 500 | Detail: Internal server error
 2025-09-01 16:00:14,156 - main - ERROR - [NOT_FOUND] Not Found | CID: 3daf152ebaec4ceea27092f0456ef740 | Path: http://100.64.143.61:8000/favicon.ico | Status: 404 | Detail: Not Found
+2025-09-02 22:14:35,363 - main - ERROR - [HTTP_ERROR] HTTP error | CID: d5b068029cb343c5a12e9832db00a377 | Path: http://testserver/render/batch | Status: 400 | Detail: items length must be 50 or less
+2025-09-02 22:14:35,371 - main - ERROR - [UNAUTHORIZED] Unauthorized | CID: f8986cc13ddd4e65a2bae4df6b2dd204 | Path: http://testserver/debug/html | Status: 401 | Detail: Unauthorized
+2025-09-02 22:14:35,379 - main - ERROR - Invalid font specified: unknown, using default font
+2025-09-02 22:16:36,790 - main - ERROR - [HTTP_ERROR] HTTP error | CID: b9c6cdac68154bdc80a7addc15108d67 | Path: http://testserver/render/batch | Status: 400 | Detail: items length must be 50 or less
+2025-09-02 22:16:36,799 - main - ERROR - [UNAUTHORIZED] Unauthorized | CID: 122a9dfd328040a8b0a07a216ed72ccc | Path: http://testserver/debug/html | Status: 401 | Detail: Unauthorized
+2025-09-02 22:16:36,809 - main - ERROR - Invalid font specified: unknown, using default font

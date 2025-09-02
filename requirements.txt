@@ -7,3 +7,5 @@ requests
 playwright
 numpy
 budoux
+pytest
+httpx

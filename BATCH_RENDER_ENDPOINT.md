@@ -16,6 +16,7 @@
 
 - `items` 配列の最大長は 50。超過した場合は 400 Bad Request を返す。
 - `defaults` で共通のレンダリングパラメータを指定でき、各アイテムはそれを上書きする。
+- フォント指定が無効な場合はアンチック体にフォールバックする。
 
 ```jsonc
 {
@@ -67,10 +68,11 @@
       "trimmed": false
     },
     {
-      "error": {
-        "code": "FONT_NOT_FOUND",
-        "message": "font 'unknown_font' is not available"
-      }
+      "image_base64": "...",
+      "width": 120,
+      "height": 200,
+      "processing_time_ms": 789.0,
+      "trimmed": true
     }
   ]
 }
