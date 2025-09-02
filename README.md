@@ -8,7 +8,7 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
 - 透明背景のPNG画像生成
 - BudouXによる自然な改行
 - 自動トリミング（文字列をピッタリ囲む）
-- フォント選択機能（Gothic/Mincho）
+- フォント選択機能（Gothic/Mincho、未指定/無効時はアンチック）
 - 一括レンダリング対応
 
 ## APIエンドポイント
@@ -22,7 +22,7 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
 | パラメータ | 型 | 必須 | デフォルト | 説明 |
 |-----------|---|------|-----------|------|
 | text | string | ✓ | - | レンダリングするテキスト |
-| font | string | - | null | 使用するフォント ("gothic" または "mincho") |
+| font | string | - | null | 使用するフォント（"gothic" または "mincho"。未指定/無効時はアンチックにフォールバック） |
 | font_size | integer | - | 20 | フォントサイズ (8-100) |
 | line_height | float | - | 1.6 | 行間 (1.0-3.0) |
 | letter_spacing | float | - | 0.05 | 文字間（em単位） (0-0.5) |
@@ -34,7 +34,11 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
 
 - `gothic`: ゴシック体（GenEiMGothic2-Regular.ttf）
 - `mincho`: 明朝体（GenEiChikugoMin3-R.ttf）
-- 指定なし: デフォルトフォント（GenEiAntiqueNv5-M.ttf）
+- 指定なし/無効指定: デフォルト（アンチック：GenEiAntiqueNv5-M.ttf）
+
+備考:
+- `font` に "gothic"/"mincho" 以外を指定した場合もアンチックにフォールバックします。
+- アンチックを明示したい場合は `font` を省略するのが推奨です。
 
 #### リクエスト例
 
@@ -57,9 +61,13 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
   "width": 400,
   "height": 600,
   "processing_time_ms": 1234.5,
-  "trimmed": true
+  "trimmed": true,
+  "font": "mincho"
 }
 ```
+
+フィールド説明:
+- `font`: 実際に使用されたフォント名（`antique`/`gothic`/`mincho`）
 
 ### POST /render/batch
 
@@ -68,6 +76,7 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
 - `items` 配列の最大長は50。超過した場合は400 Bad Requestを返します。
 - `defaults` で共通パラメータを指定でき、各アイテムで上書きできます。
 - 無効なフォント指定はアンチック体にフォールバックします。
+ - 各結果オブジェクトに実際に使用された `font` 名が含まれます。
 
 #### リクエスト例
 
@@ -86,8 +95,8 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
 ```jsonc
 {
   "results": [
-    {"image_base64": "...", "width": 120, "height": 200, "processing_time_ms": 456.7, "trimmed": false},
-    {"image_base64": "...", "width": 120, "height": 200, "processing_time_ms": 789.0, "trimmed": true}
+    {"image_base64": "...", "width": 120, "height": 200, "processing_time_ms": 456.7, "trimmed": false, "font": "gothic"},
+    {"image_base64": "...", "width": 120, "height": 200, "processing_time_ms": 789.0, "trimmed": true, "font": "mincho"}
   ]
 }
 ```

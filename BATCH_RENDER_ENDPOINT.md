@@ -49,6 +49,7 @@
 ### レスポンス
 
 - 各結果オブジェクトは成功時に画像情報を、失敗時に `error` フィールドを返す。
+- 成功時の各アイテムには、実際に使用された `font` 名（`antique`/`gothic`/`mincho`）が含まれる。
 
 ```jsonc
 {
@@ -58,21 +59,24 @@
       "width": 400,
       "height": 600,
       "processing_time_ms": 1234.5,
-      "trimmed": true
+      "trimmed": true,
+      "font": "mincho"
     },
     {
       "image_base64": "...",
       "width": 120,
       "height": 200,
       "processing_time_ms": 456.7,
-      "trimmed": false
+      "trimmed": false,
+      "font": "gothic"
     },
     {
       "image_base64": "...",
       "width": 120,
       "height": 200,
       "processing_time_ms": 789.0,
-      "trimmed": true
+      "trimmed": true,
+      "font": "antique"
     }
   ]
 }

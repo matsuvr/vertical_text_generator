@@ -1,4 +1,4 @@
-"""HTMLベース日本語縦書きAPI - Playwrightで高品質な縦書きレンダリング"""
+"HTMLベース日本語縦書きAPI - Playwrightで高品質な縦書きレンダリング"
 
 # (
 #     screenshot_bytes,
@@ -99,6 +99,101 @@ FONT_CANDIDATES = [
 ]
 
 
+# ---------- Persistent Playwright browser and page pool ----------
+class PagePool:
+    def __init__(self, browser, capacity: int = 2):
+        self.browser = browser
+        self.capacity = max(1, capacity)
+        self._queue: asyncio.Queue = asyncio.Queue()
+        self._created = 0
+        self._lock = asyncio.Lock()
+
+    async def _create_page(self):
+        page = await self.browser.new_page(viewport={"width": 10, "height": 10})
+        page.set_default_navigation_timeout(30_000)
+        return page
+
+    async def acquire(self):
+        try:
+            page = self._queue.get_nowait()
+            return page
+        except asyncio.QueueEmpty:
+            pass
+        async with self._lock:
+            if self._created < self.capacity:
+                self._created += 1
+                return await self._create_page()
+        page = await self._queue.get()
+        return page
+
+    async def release(self, page):
+        try:
+            await page.goto("about:blank")
+        except Exception:
+            try:
+                new_page = await self._create_page()
+                await self._queue.put(new_page)
+                return
+            except Exception:
+                pass
+        await self._queue.put(page)
+
+
+class BrowserManager:
+    _playwright = None
+    _browser = None
+    _pool: Optional[PagePool] = None
+    _init_lock = asyncio.Lock()
+
+    @classmethod
+    async def start(cls, pool_size: int):
+        if cls._browser is not None and cls._pool is not None:
+            return
+        async with cls._init_lock:
+            if cls._browser is None:
+                from playwright.async_api import async_playwright
+                cls._playwright = await async_playwright().start()
+                cls._browser = await cls._playwright.chromium.launch(
+                    headless=True,
+                    args=[
+                        "--no-sandbox",
+                        "--disable-dev-shm-usage",
+                    ],
+                )
+            if cls._pool is None:
+                cls._pool = PagePool(cls._browser, capacity=max(1, pool_size))
+
+    @classmethod
+    async def get_pool(cls) -> PagePool:
+        if cls._pool is None:
+            pool_size = int(os.getenv("PAGE_POOL_SIZE", str(MAX_CONCURRENCY)))
+            await cls.start(pool_size)
+        return cls._pool  # type: ignore
+
+    @classmethod
+    async def shutdown(cls):
+        try:
+            if cls._pool is not None:
+                while not cls._pool._queue.empty():
+                    page = await cls._pool._queue.get()
+                    try:
+                        await page.close()
+                    except Exception:
+                        pass
+                cls._pool = None
+        finally:
+            try:
+                if cls._browser is not None:
+                    await cls._browser.close()
+            finally:
+                cls._browser = None
+                if cls._playwright is not None:
+                    try:
+                        await cls._playwright.stop()
+                    finally:
+                        cls._playwright = None
+
+
 def select_font_path(font_name: Optional[str]) -> Optional[str]:
     """フォント名からフォントパスを解決。無効な指定はアンチックにフォールバック"""
     if font_name:
@@ -111,6 +206,28 @@ def select_font_path(font_name: Optional[str]) -> Optional[str]:
         return str(DEFAULT_FONT_PATH)
     logger.error(f"Default font not found at {DEFAULT_FONT_PATH}")
     return None
+
+
+def resolve_font_name_and_path(requested_font: Optional[str]) -> Tuple[str, Optional[str]]:
+    """要求フォント名から、実際に使用する論理名とパスを返す。
+
+    戻り値のフォント名は 'gothic' | 'mincho' | 'antique' のいずれか。
+    パスは存在確認済みのもの、見つからない場合は None（システムフォントに委ねる）。
+    """
+    if requested_font:
+        key = requested_font.lower()
+        path = FONT_MAP.get(key)
+        if path and path.exists():
+            return key, str(path)
+        # 無効指定はアンチックへフォールバック
+        logger.error(f"Invalid font specified: {requested_font}, falling back to antique")
+
+    # デフォルト（アンチック）
+    if DEFAULT_FONT_PATH.exists():
+        return "antique", str(DEFAULT_FONT_PATH)
+    # デフォルトフォントが見つからない場合でも、論理名は 'antique' を返す
+    logger.error(f"Default font not found at {DEFAULT_FONT_PATH}")
+    return "antique", None
 
 
 class ErrorResponse(BaseModel):
@@ -287,9 +404,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 # リクエストモデル
 class VerticalTextRequest(BaseModel):
     text: str = Field(..., description="レンダリングするテキスト")
-    font: Optional[Literal["gothic", "mincho"]] = Field(
+    # 無効なフォント指定も受け入れ、処理側でアンチックにフォールバックする
+    font: Optional[str] = Field(
         default=None,
-        description="使用するフォント ('gothic' または 'mincho')",
+        description="使用するフォント（'gothic' または 'mincho'。未指定/無効時はアンチック）",
     )
     font_size: int = Field(default=20, ge=8, le=100, description="フォントサイズ")
     line_height: float = Field(default=1.6, ge=1.0, le=3.0, description="行間")
@@ -310,11 +428,6 @@ class VerticalTextRequest(BaseModel):
         le=100,
         description="1行あたりの最大文字数（BudouXで自動改行）",
     )
-    embed_font: bool = Field(
-        default=False,
-        description="フォントをBase64でHTMLに埋め込む（大容量のため通常は無効推奨）",
-    )
-
     @validator("text")
     def text_not_empty(cls, v):
         if not v.strip():
@@ -329,6 +442,7 @@ class VerticalTextResponse(BaseModel):
     height: int = Field(..., description="画像の高さ")
     processing_time_ms: float = Field(..., description="処理時間（ミリ秒）")
     trimmed: bool = Field(..., description="画像がトリミングされたかどうか")
+    font: str = Field(..., description="使用されたフォント名（'antique'/'gothic'/'mincho'）")
 
 
 class _BatchRenderBase(BaseModel):
@@ -352,11 +466,6 @@ class _BatchRenderBase(BaseModel):
         le=100,
         description="1行あたりの最大文字数（BudouXで自動改行）",
     )
-    embed_font: bool = Field(
-        default=False,
-        description="フォントをBase64でHTMLに埋め込む（大容量のため通常は無効推奨）",
-    )
-
 
 class BatchRenderItem(_BatchRenderBase):
     text: str = Field(..., description="レンダリングするテキスト")
@@ -388,6 +497,7 @@ class BatchRenderItemResult(BaseModel):
     height: Optional[int] = None
     processing_time_ms: Optional[float] = None
     trimmed: Optional[bool] = None
+    font: Optional[str] = None
     error: Optional[BatchRenderError] = None
 
 
@@ -403,6 +513,77 @@ class JapaneseVerticalHTMLGenerator:
         # BudouXパーサーの初期化
         self.budoux_parser = budoux.load_default_japanese_parser()
         self._font_base64_cache: Dict[str, str] = {}
+        # 高負荷運用向け: 起動時にフォントをメモリへ先読み（環境変数で制御可能）
+        try:
+            preload = os.getenv("PRELOAD_FONTS", "1") not in ("0", "false", "False")
+            if preload:
+                self._preload_fonts_into_memory()
+            # フォント用に一定量のメモリを確保（要求があれば）
+            self._ensure_font_memory_reserve()
+        except Exception:
+            # 先読み失敗は致命的ではないため握りつぶして続行
+            logger.warning("Font preload failed; will lazily load on first use", exc_info=True)
+
+    def _preload_fonts_into_memory(self) -> None:
+        """既知のフォントをBase64へ変換しプロセスのメモリにキャッシュ"""
+        candidates: List[Path] = []
+        # デフォルトフォントとAPIで選べるフォント群
+        candidates.append(DEFAULT_FONT_PATH)
+        candidates.extend(FONT_MAP.values())
+        # システム候補（存在すれば）
+        candidates.extend(FONT_CANDIDATES)
+        seen: set[str] = set()
+        for p in candidates:
+            try:
+                if not p:
+                    continue
+                p_str = str(p)
+                if p_str in seen:
+                    continue
+                seen.add(p_str)
+                if Path(p_str).exists():
+                    # キャッシュミス時のみ実ファイルから読み込み
+                    if self._font_base64_cache.get(p_str) is None:
+                        self._encode_font_as_base64(p_str)
+            except Exception:
+                # ログのみ、処理継続
+                logger.warning("Failed to preload font: %s", p, exc_info=True)
+
+    def _ensure_font_memory_reserve(self) -> None:
+        """フォント用に所定のメモリを確保しておく（既存キャッシュ不足分をゼロ埋めで確保）。
+
+        環境変数 `FONT_MEMORY_RESERVE_MB`（デフォルト40）で目標確保量を指定。
+        実際のフォントBase64キャッシュの合計が不足している場合のみ差分を確保する。
+        """
+        try:
+            target_mb = int(os.getenv("FONT_MEMORY_RESERVE_MB", "40"))
+        except ValueError:
+            target_mb = 40
+        target_bytes = max(0, target_mb * 1024 * 1024)
+
+        total_cache_bytes = 0
+        try:
+            for v in self._font_base64_cache.values():
+                if isinstance(v, str):
+                    total_cache_bytes += len(v)
+                elif isinstance(v, (bytes, bytearray)):
+                    total_cache_bytes += len(v)
+        except Exception:
+            pass
+
+        reserve_needed = max(0, target_bytes - total_cache_bytes)
+        try:
+            self._font_memory_reserve = bytearray(reserve_needed) if reserve_needed > 0 else b""
+            if reserve_needed > 0:
+                logger.info(
+                    "Reserved additional font memory: %s bytes (cache=%s bytes, target=%s bytes)",
+                    reserve_needed,
+                    total_cache_bytes,
+                    target_bytes,
+                )
+        except Exception:
+            # メモリ確保に失敗してもサービスは継続
+            logger.warning("Font memory reserve allocation failed", exc_info=True)
 
     def _get_default_font_path(self) -> str:
         """デフォルトフォントパスを取得"""
@@ -565,24 +746,22 @@ class JapaneseVerticalHTMLGenerator:
         use_tategaki_js: bool = False,
         max_chars_per_line: Optional[int] = None,
         font_path: Optional[str] = None,
-        embed_font: bool = False,
     ) -> str:
         """縦書きHTMLを生成"""
         # BudouXによる自動改行処理
         if max_chars_per_line is not None:
             text = self._apply_budoux_line_breaks(text, max_chars_per_line)
 
-        # フォントのBase64エンコード（任意）。大容量フォントは自動で埋め込みを回避
-        font_base64: Optional[str] = None
-        if embed_font:
-            font_base64 = self._encode_font_as_base64(font_path)
-            # だいたい3MB以上の埋め込みはChromiumのメモリ/安定性に悪影響が大きいので回避
-            if font_base64 and len(font_base64) > 3_000_000:
-                logger.error(
-                    "[FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): %s bytes",
-                    len(font_base64),
-                )
-                font_base64 = None
+        # フォントを常にBase64でエンコードして埋め込む
+        font_base64: Optional[str] = self._encode_font_as_base64(font_path)
+        # 以前は3MB以上を回避していたが、ローカルフォント（源暎系）を確実に使うため閾値を引き上げ
+        # （Base64化で ~1.3x になるため、20MB まで許容）
+        if font_base64 and len(font_base64) > 20_000_000:
+            logger.error(
+                "[FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): %s bytes",
+                len(font_base64),
+            )
+            font_base64 = None
 
         # テキスト処理
         processed_text = self._process_text_for_vertical(text)
@@ -810,57 +989,28 @@ class HTMLToPNGConverter:
     async def convert_with_playwright(
         html_content: str,
     ) -> Tuple[float, bytes, int, int]:
-        """PlaywrightでHTMLをPNGに変換"""
+        """PlaywrightでHTMLをPNGに変換（常駐ブラウザ＋ページプール使用）"""
         start_time = time.time()
 
         try:
-            from playwright.async_api import async_playwright
-
-            # 同時実行を制限
+            # 同時実行を制限しつつ、共有のページプールから取得
             async with _convert_semaphore:
-                async with async_playwright() as p:
-                    browser = await p.chromium.launch(
-                        headless=True,
-                        args=[
-                            "--no-sandbox",
-                            "--disable-setuid-sandbox",
-                            "--font-render-hinting=none",
-                            "--disable-font-subpixel-positioning",
-                            "--disable-dbus",
-                            "--disable-features=VizDisplayCompositor",
-                            # Additional flags to improve stability in container environments
-                            "--disable-dev-shm-usage",
-                            "--disable-gpu",
-                            "--single-process",
-                        ],
-                    )
-
-                    page = None
-                    try:
-                        # create page with a reasonable default timeout and set content
-                        page = await browser.new_page(
-                            viewport={"width": 10, "height": 10},
-                        )
-                        page.set_default_navigation_timeout(30_000)
-                        (
-                            screenshot_bytes,
-                            actual_width,
-                            actual_height,
-                        ) = await HTMLToPNGConverter._render_on_page(page, html_content)
-                    finally:
-                        try:
-                            if page is not None:
-                                await page.close()
-                        except Exception:
-                            pass
-                        await browser.close()
+                pool = await BrowserManager.get_pool()
+                page = await pool.acquire()
+                try:
+                    (
+                        screenshot_bytes,
+                        actual_width,
+                        actual_height,
+                    ) = await HTMLToPNGConverter._render_on_page(page, html_content)
+                finally:
+                    await pool.release(page)
 
         except Exception as e:
             logger.error(
                 f"[PLAYWRIGHT_ERROR] Playwright conversion failed: {e!s} | "
                 f"Error type: {type(e).__name__} | "
-                f"HTML content length: {len(html_content)} | "
-                f"Browser args: --no-sandbox,--disable-setuid-sandbox,--font-render-hinting=none,--disable-font-subpixel-positioning",
+                f"HTML content length: {len(html_content)}",
                 exc_info=True,
             )
             raise
@@ -910,7 +1060,7 @@ class VerticalTextRendererService:
         self._converter = conv
 
     async def render(self, request: VerticalTextRequest) -> VerticalTextResponse:
-        font_path = select_font_path(request.font)
+        font_name, font_path = resolve_font_name_and_path(request.font)
         html_content = self._html_gen.create_vertical_html(
             text=request.text,
             font_size=request.font_size,
@@ -920,7 +1070,6 @@ class VerticalTextRendererService:
             use_tategaki_js=request.use_tategaki_js,
             max_chars_per_line=request.max_chars_per_line,
             font_path=font_path,
-            embed_font=request.embed_font,
         )
 
         (
@@ -955,6 +1104,7 @@ class VerticalTextRendererService:
             height=height,
             processing_time_ms=processing_time,
             trimmed=trimmed,
+            font=font_name,
         )
 
     async def render_batch(
@@ -964,100 +1114,81 @@ class VerticalTextRendererService:
         results: List[BatchRenderItemResult] = []
 
         async with _convert_semaphore:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(
-                    headless=True,
-                    args=[
-                        "--no-sandbox",
-                        "--disable-setuid-sandbox",
-                        "--font-render-hinting=none",
-                        "--disable-font-subpixel-positioning",
-                        "--disable-dbus",
-                        "--disable-features=VizDisplayCompositor",
-                        "--disable-dev-shm-usage",
-                        "--disable-gpu",
-                        "--single-process",
-                    ],
-                )
+            pool = await BrowserManager.get_pool()
+
+            async def _render_one_item(
+                item: BatchRenderItem,
+                page,
+            ) -> BatchRenderItemResult:
+                start_time = time.time()
                 try:
-                    # helper to render a single item using an existing page
-                    async def _render_one_item(
-                        item: BatchRenderItem,
+                    font_name, font_path = resolve_font_name_and_path(item.font)
+                    html_content = self._html_gen.create_vertical_html(
+                        text=item.text,
+                        font_size=item.font_size,
+                        line_height=item.line_height,
+                        letter_spacing=item.letter_spacing,
+                        padding=item.padding,
+                        use_tategaki_js=item.use_tategaki_js,
+                        max_chars_per_line=item.max_chars_per_line,
+                        font_path=font_path,
+                    )
+                    (
+                        screenshot_bytes,
+                        _,
+                        _,
+                    ) = await self._converter.render_on_page(
                         page,
-                    ) -> BatchRenderItemResult:
-                        start_time = time.time()
+                        html_content,
+                    )
+                    img, trimmed = trim_image(screenshot_bytes)
+                    img_byte_arr = io.BytesIO()
+                    try:
+                        img.save(img_byte_arr, format="PNG", optimize=True)
+                        image_data = img_byte_arr.getvalue()
+                    finally:
                         try:
-                            font_path = select_font_path(item.font)
-                            html_content = self._html_gen.create_vertical_html(
-                                text=item.text,
-                                font_size=item.font_size,
-                                line_height=item.line_height,
-                                letter_spacing=item.letter_spacing,
-                                padding=item.padding,
-                                use_tategaki_js=item.use_tategaki_js,
-                                max_chars_per_line=item.max_chars_per_line,
-                                font_path=font_path,
-                                embed_font=item.embed_font,
-                            )
-                            (
-                                screenshot_bytes,
-                                _,
-                                _,
-                            ) = await self._converter.render_on_page(
-                                page,
-                                html_content,
-                            )
-                            img, trimmed = trim_image(screenshot_bytes)
-                            img_byte_arr = io.BytesIO()
-                            try:
-                                img.save(img_byte_arr, format="PNG", optimize=True)
-                                image_data = img_byte_arr.getvalue()
-                            finally:
-                                try:
-                                    img.close()
-                                except Exception as e:
-                                    logger.warning(
-                                        "Failed to close image object: %s",
-                                        e,
-                                        exc_info=True,
-                                    )
-                                img_byte_arr.close()
-                            width, height = img.size
-                            image_base64 = base64.b64encode(image_data).decode("utf-8")
-                            processing_time = (time.time() - start_time) * 1000
-                            return BatchRenderItemResult(
-                                image_base64=image_base64,
-                                width=width,
-                                height=height,
-                                processing_time_ms=processing_time,
-                                trimmed=trimmed,
-                            )
+                            img.close()
                         except Exception as e:
-                            logger.error(
-                                f"[BATCH_RENDER_ERROR] Rendering failed: {e!s} | "
-                                f"Error type: {type(e).__name__} | "
-                                f"Text length: {len(item.text)} | Font: {item.font}",
+                            logger.warning(
+                                "Failed to close image object: %s",
+                                e,
                                 exc_info=True,
                             )
-                            return BatchRenderItemResult(
-                                error=BatchRenderError(
-                                    code="RENDER_ERROR",
-                                    message="Rendering failed",
-                                ),
-                            )
-
-                    # ページを一度だけ生成し、ループ内で再利用
-                    page = await browser.new_page(
-                        viewport={"width": 10, "height": 10},
+                        img_byte_arr.close()
+                    width, height = img.size
+                    image_base64 = base64.b64encode(image_data).decode("utf-8")
+                    processing_time = (time.time() - start_time) * 1000
+                    return BatchRenderItemResult(
+                        image_base64=image_base64,
+                        width=width,
+                        height=height,
+                        processing_time_ms=processing_time,
+                        trimmed=trimmed,
+                        font=font_name,
                     )
-                    try:
-                        for item in items:
-                            result = await _render_one_item(item, page)
-                            results.append(result)
-                    finally:
-                        await page.close()
-                finally:
-                    await browser.close()
+                except Exception as e:
+                    logger.error(
+                        f"[BATCH_RENDER_ERROR] Rendering failed: {e!s} | "
+                        f"Error type: {type(e).__name__} | "
+                        f"Text length: {len(item.text)} | Font: {item.font}",
+                        exc_info=True,
+                    )
+                    return BatchRenderItemResult(
+                        error=BatchRenderError(
+                            code="RENDER_ERROR",
+                            message="Rendering failed",
+                        ),
+                    )
+
+            # ページをプールから取得し、アイテム間で再利用
+            page = await pool.acquire()
+            try:
+                for item in items:
+                    result = await _render_one_item(item, page)
+                    results.append(result)
+            finally:
+                await pool.release(page)
 
         return results
 
@@ -1068,6 +1199,21 @@ converter = HTMLToPNGConverter()
 renderer_service = VerticalTextRendererService(html_generator, converter)
 
 
+# FastAPI lifecycle events to manage persistent browser
+@app.on_event("startup")
+async def _on_startup():
+    try:
+        pool_size = int(os.getenv("PAGE_POOL_SIZE", str(MAX_CONCURRENCY)))
+    except ValueError:
+        pool_size = MAX_CONCURRENCY
+    await BrowserManager.start(pool_size)
+
+
+@app.on_event("shutdown")
+async def _on_shutdown():
+    await BrowserManager.shutdown()
+
+
 @app.post(
     "/render",
     response_model=VerticalTextResponse,
@@ -1075,8 +1221,11 @@ renderer_service = VerticalTextRendererService(html_generator, converter)
 )
 async def render_vertical_text(request: VerticalTextRequest):
     """縦書きテキストをレンダリング（認証必須）"""
+    logger.info("Checking POST /render start")
     try:
-        return await renderer_service.render(request)
+        result = await renderer_service.render(request)
+        logger.info("Checking POST /render end")
+        return result
     except Exception as e:
         logger.error(
             f"[RENDER_ERROR] Rendering failed: {e!s} | "
@@ -1085,7 +1234,7 @@ async def render_vertical_text(request: VerticalTextRequest):
             f"font_size: {request.font_size}, line_height: {request.line_height}, "
             f"letter_spacing: {request.letter_spacing}, padding: {request.padding}, "
             f"use_tategaki_js: {request.use_tategaki_js}, max_chars_per_line: {request.max_chars_per_line} | "
-            f"Font path: {select_font_path(request.font)}",
+            f"Resolved font: {resolve_font_name_and_path(request.font)}",
             exc_info=True,
         )
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -1168,7 +1317,6 @@ async def debug_html(
     use_tategaki_js: bool = False,
     max_chars_per_line: Optional[int] = None,
     font: Optional[str] = None,
-    embed_font: bool = False,
 ):
     """生成されるHTMLをデバッグ用に確認（認証必須）"""
     try:
@@ -1179,7 +1327,6 @@ async def debug_html(
             use_tategaki_js=use_tategaki_js,
             max_chars_per_line=max_chars_per_line,
             font_path=font_path,
-            embed_font=embed_font,
         )
         return HTMLResponse(content=html_content)
     except Exception as e:
@@ -1189,7 +1336,7 @@ async def debug_html(
             f"Query params - text: {text[:100] + '...' if len(text) > 100 else text}, "
             f"font_size: {font_size}, use_tategaki_js: {use_tategaki_js}, "
             f"max_chars_per_line: {max_chars_per_line}, font: {font} | "
-            f"Font path: {select_font_path(font)}",
+            f"Resolved font: {resolve_font_name_and_path(font)}",
             exc_info=True,
         )
         raise HTTPException(status_code=500, detail="Internal server error")

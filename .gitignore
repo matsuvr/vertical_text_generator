@@ -20,6 +20,7 @@ wheels/
 test_results/
 chrome_test_py.py
 test_output/
+operation_checks_output/
 
 # VSCode settings
 .vscode/

@@ -325,3 +325,467 @@ Call log:
 2025-09-02 22:16:36,790 - main - ERROR - [HTTP_ERROR] HTTP error | CID: b9c6cdac68154bdc80a7addc15108d67 | Path: http://testserver/render/batch | Status: 400 | Detail: items length must be 50 or less
 2025-09-02 22:16:36,799 - main - ERROR - [UNAUTHORIZED] Unauthorized | CID: 122a9dfd328040a8b0a07a216ed72ccc | Path: http://testserver/debug/html | Status: 401 | Detail: Unauthorized
 2025-09-02 22:16:36,809 - main - ERROR - Invalid font specified: unknown, using default font
+2025-09-02 13:59:17,258 - main - ERROR - [NOT_FOUND] Not Found | CID: 902416e2fcb54bb78f1b830828acd338 | Path: http://localhost:8000/favicon.ico | Status: 404 | Detail: Not Found
+2025-09-02 14:46:17,190 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 12197992 bytes
+2025-09-02 14:46:17,749 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 6254248 bytes
+2025-09-02 14:46:18,178 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 16314328 bytes
+2025-09-02 14:46:18,757 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 6254248 bytes
+2025-09-02 14:46:18,878 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 16314328 bytes
+2025-09-02 15:00:33,025 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 12197992 bytes
+2025-09-02 15:00:33,643 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 6254248 bytes
+2025-09-02 15:00:34,099 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 16314328 bytes
+2025-09-02 15:00:34,717 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 6254248 bytes
+2025-09-02 15:00:34,839 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 16314328 bytes
+2025-09-02 15:01:58,474 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 12197992 bytes
+2025-09-02 15:01:59,058 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 6254248 bytes
+2025-09-02 15:01:59,461 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 16314328 bytes
+2025-09-02 15:02:00,093 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 6254248 bytes
+2025-09-02 15:02:00,219 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 16314328 bytes
+2025-09-02 15:13:39,635 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 12197992 bytes
+2025-09-02 15:13:42,060 - main - ERROR - [PLAYWRIGHT_ERROR] Playwright conversion failed: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-dGvt9T --remote-debugging-pipe --no-startup-window
+<launched> pid=31
+[pid=31][err] [0902/151339.835502:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=31][err] [0902/151339.836135:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=31][err] [0902/151339.836168:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=31][err] [0902/151339.839122:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=31][err] [0902/151339.842223:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] [0902/151339.842243:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] [0902/151339.842252:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=31][err] [0902/151339.842254:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=31][err] [0902/151339.842261:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=31][err] [0902/151339.842262:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=31][err] [0902/151339.844991:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] [0902/151339.845010:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] [0902/151339.845014:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=31][err] [0902/151339.845016:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=31][err] [0902/151339.845018:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=31][err] [0902/151339.845019:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=31][err] [0902/151340.018172:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable. | Error type: TargetClosedError | HTML content length: 2756 | Browser args: --no-sandbox,--disable-setuid-sandbox,--font-render-hinting=none,--disable-font-subpixel-positioning
+Traceback (most recent call last):
+  File "/app/main.py", line 828, in convert_with_playwright
+    page = await browser.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/async_api/_generated.py", line 14173, in new_page
+    await self._impl_obj.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_browser.py", line 230, in new_page
+    return await self._connection.wrap_api_call(inner, title="Create page")
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-dGvt9T --remote-debugging-pipe --no-startup-window
+<launched> pid=31
+[pid=31][err] [0902/151339.835502:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=31][err] [0902/151339.836135:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=31][err] [0902/151339.836168:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=31][err] [0902/151339.839122:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=31][err] [0902/151339.842223:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] [0902/151339.842243:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] [0902/151339.842252:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=31][err] [0902/151339.842254:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=31][err] [0902/151339.842261:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=31][err] [0902/151339.842262:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=31][err] [0902/151339.844991:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] [0902/151339.845010:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] [0902/151339.845014:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=31][err] [0902/151339.845016:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=31][err] [0902/151339.845018:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=31][err] [0902/151339.845019:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=31][err] [0902/151340.018172:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable.
+2025-09-02 15:13:42,063 - main - ERROR - [RENDER_ERROR] Rendering failed: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-dGvt9T --remote-debugging-pipe --no-startup-window
+<launched> pid=31
+[pid=31][err] [0902/151339.835502:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=31][err] [0902/151339.836135:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=31][err] [0902/151339.836168:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=31][err] [0902/151339.839122:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=31][err] [0902/151339.842223:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] [0902/151339.842243:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] [0902/151339.842252:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=31][err] [0902/151339.842254:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=31][err] [0902/151339.842261:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=31][err] [0902/151339.842262:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=31][err] [0902/151339.844991:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] [0902/151339.845010:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] [0902/151339.845014:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=31][err] [0902/151339.845016:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=31][err] [0902/151339.845018:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=31][err] [0902/151339.845019:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=31][err] [0902/151340.018172:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable. | Error type: TargetClosedError | Request data - text_length: 21, font: None, font_size: 22, line_height: 1.6, letter_spacing: 0.05, padding: 20, use_tategaki_js: False, max_chars_per_line: None | Font path: fonts/GenEiAntiqueNv5-M.ttf
+Traceback (most recent call last):
+  File "/app/main.py", line 1064, in render_vertical_text
+    return await renderer_service.render(request)
+  File "/app/main.py", line 917, in render
+    ) = await self._converter.convert_with_playwright(html_content)
+  File "/app/main.py", line 828, in convert_with_playwright
+    page = await browser.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/async_api/_generated.py", line 14173, in new_page
+    await self._impl_obj.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_browser.py", line 230, in new_page
+    return await self._connection.wrap_api_call(inner, title="Create page")
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-dGvt9T --remote-debugging-pipe --no-startup-window
+<launched> pid=31
+[pid=31][err] [0902/151339.835502:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=31][err] [0902/151339.836135:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=31][err] [0902/151339.836168:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=31][err] [0902/151339.839122:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=31][err] [0902/151339.842223:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] [0902/151339.842243:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] [0902/151339.842252:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=31][err] [0902/151339.842254:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=31][err] [0902/151339.842261:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=31][err] [0902/151339.842262:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=31][err] [0902/151339.844991:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=31][err] [0902/151339.845010:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=31][err] [0902/151339.845014:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=31][err] [0902/151339.845016:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=31][err] [0902/151339.845018:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=31][err] [0902/151339.845019:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=31][err] [0902/151340.018172:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable.
+2025-09-02 15:13:42,064 - main - ERROR - [INTERNAL_ERROR] Internal server error | CID: 09a59154797c4425bae4a495956cc496 | Path: http://localhost:8000/render | Status: 500 | Detail: Internal server error
+2025-09-02 15:13:42,111 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 6254248 bytes
+2025-09-02 15:13:43,906 - main - ERROR - [PLAYWRIGHT_ERROR] Playwright conversion failed: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-MpJD4b --remote-debugging-pipe --no-startup-window
+<launched> pid=76
+[pid=76][err] [0902/151342.292087:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=76][err] [0902/151342.292779:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=76][err] [0902/151342.292822:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=76][err] [0902/151342.295131:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=76][err] [0902/151342.296504:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable.
+[pid=76][err] [0902/151342.296512:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] [0902/151342.296520:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] [0902/151342.296525:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=76][err] [0902/151342.296526:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=76][err] [0902/151342.296532:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=76][err] [0902/151342.296534:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=76][err] [0902/151342.298741:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] [0902/151342.298749:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] [0902/151342.298752:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=76][err] [0902/151342.298754:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=76][err] [0902/151342.298756:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=76][err] [0902/151342.298757:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed. | Error type: TargetClosedError | HTML content length: 2755 | Browser args: --no-sandbox,--disable-setuid-sandbox,--font-render-hinting=none,--disable-font-subpixel-positioning
+Traceback (most recent call last):
+  File "/app/main.py", line 828, in convert_with_playwright
+    page = await browser.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/async_api/_generated.py", line 14173, in new_page
+    await self._impl_obj.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_browser.py", line 230, in new_page
+    return await self._connection.wrap_api_call(inner, title="Create page")
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-MpJD4b --remote-debugging-pipe --no-startup-window
+<launched> pid=76
+[pid=76][err] [0902/151342.292087:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=76][err] [0902/151342.292779:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=76][err] [0902/151342.292822:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=76][err] [0902/151342.295131:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=76][err] [0902/151342.296504:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable.
+[pid=76][err] [0902/151342.296512:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] [0902/151342.296520:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] [0902/151342.296525:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=76][err] [0902/151342.296526:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=76][err] [0902/151342.296532:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=76][err] [0902/151342.296534:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=76][err] [0902/151342.298741:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] [0902/151342.298749:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] [0902/151342.298752:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=76][err] [0902/151342.298754:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=76][err] [0902/151342.298756:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=76][err] [0902/151342.298757:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+2025-09-02 15:13:43,911 - main - ERROR - [RENDER_ERROR] Rendering failed: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-MpJD4b --remote-debugging-pipe --no-startup-window
+<launched> pid=76
+[pid=76][err] [0902/151342.292087:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=76][err] [0902/151342.292779:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=76][err] [0902/151342.292822:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=76][err] [0902/151342.295131:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=76][err] [0902/151342.296504:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable.
+[pid=76][err] [0902/151342.296512:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] [0902/151342.296520:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] [0902/151342.296525:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=76][err] [0902/151342.296526:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=76][err] [0902/151342.296532:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=76][err] [0902/151342.296534:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=76][err] [0902/151342.298741:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] [0902/151342.298749:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] [0902/151342.298752:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=76][err] [0902/151342.298754:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=76][err] [0902/151342.298756:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=76][err] [0902/151342.298757:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed. | Error type: TargetClosedError | Request data - text_length: 20, font: gothic, font_size: 22, line_height: 1.6, letter_spacing: 0.05, padding: 20, use_tategaki_js: False, max_chars_per_line: None | Font path: fonts/GenEiMGothic2-Regular.ttf
+Traceback (most recent call last):
+  File "/app/main.py", line 1064, in render_vertical_text
+    return await renderer_service.render(request)
+  File "/app/main.py", line 917, in render
+    ) = await self._converter.convert_with_playwright(html_content)
+  File "/app/main.py", line 828, in convert_with_playwright
+    page = await browser.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/async_api/_generated.py", line 14173, in new_page
+    await self._impl_obj.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_browser.py", line 230, in new_page
+    return await self._connection.wrap_api_call(inner, title="Create page")
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-MpJD4b --remote-debugging-pipe --no-startup-window
+<launched> pid=76
+[pid=76][err] [0902/151342.292087:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=76][err] [0902/151342.292779:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=76][err] [0902/151342.292822:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=76][err] [0902/151342.295131:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=76][err] [0902/151342.296504:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable.
+[pid=76][err] [0902/151342.296512:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] [0902/151342.296520:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] [0902/151342.296525:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=76][err] [0902/151342.296526:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=76][err] [0902/151342.296532:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=76][err] [0902/151342.296534:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=76][err] [0902/151342.298741:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=76][err] [0902/151342.298749:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=76][err] [0902/151342.298752:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=76][err] [0902/151342.298754:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=76][err] [0902/151342.298756:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=76][err] [0902/151342.298757:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+2025-09-02 15:13:43,912 - main - ERROR - [INTERNAL_ERROR] Internal server error | CID: b630fc5ae7974c45b17d324e21756d41 | Path: http://localhost:8000/render | Status: 500 | Detail: Internal server error
+2025-09-02 15:13:44,027 - main - ERROR - [FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): 16314328 bytes
+2025-09-02 15:13:45,124 - main - ERROR - [PLAYWRIGHT_ERROR] Playwright conversion failed: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-uf60qW --remote-debugging-pipe --no-startup-window
+<launched> pid=117
+[pid=117][err] [0902/151344.213263:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=117][err] [0902/151344.213982:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=117][err] [0902/151344.214014:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=117][err] [0902/151344.216515:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=117][err] [0902/151344.218171:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable.
+[pid=117][err] [0902/151344.218471:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] [0902/151344.218496:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] [0902/151344.218502:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=117][err] [0902/151344.218504:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=117][err] [0902/151344.218509:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=117][err] [0902/151344.218512:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=117][err] [0902/151344.221233:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] [0902/151344.221249:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] [0902/151344.221254:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=117][err] [0902/151344.221264:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=117][err] [0902/151344.221267:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=117][err] [0902/151344.221268:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed. | Error type: TargetClosedError | HTML content length: 2755 | Browser args: --no-sandbox,--disable-setuid-sandbox,--font-render-hinting=none,--disable-font-subpixel-positioning
+Traceback (most recent call last):
+  File "/app/main.py", line 828, in convert_with_playwright
+    page = await browser.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/async_api/_generated.py", line 14173, in new_page
+    await self._impl_obj.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_browser.py", line 230, in new_page
+    return await self._connection.wrap_api_call(inner, title="Create page")
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-uf60qW --remote-debugging-pipe --no-startup-window
+<launched> pid=117
+[pid=117][err] [0902/151344.213263:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=117][err] [0902/151344.213982:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=117][err] [0902/151344.214014:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=117][err] [0902/151344.216515:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=117][err] [0902/151344.218171:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable.
+[pid=117][err] [0902/151344.218471:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] [0902/151344.218496:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] [0902/151344.218502:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=117][err] [0902/151344.218504:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=117][err] [0902/151344.218509:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=117][err] [0902/151344.218512:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=117][err] [0902/151344.221233:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] [0902/151344.221249:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] [0902/151344.221254:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=117][err] [0902/151344.221264:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=117][err] [0902/151344.221267:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=117][err] [0902/151344.221268:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+2025-09-02 15:13:45,141 - main - ERROR - [RENDER_ERROR] Rendering failed: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-uf60qW --remote-debugging-pipe --no-startup-window
+<launched> pid=117
+[pid=117][err] [0902/151344.213263:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=117][err] [0902/151344.213982:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=117][err] [0902/151344.214014:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=117][err] [0902/151344.216515:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=117][err] [0902/151344.218171:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable.
+[pid=117][err] [0902/151344.218471:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] [0902/151344.218496:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] [0902/151344.218502:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=117][err] [0902/151344.218504:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=117][err] [0902/151344.218509:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=117][err] [0902/151344.218512:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=117][err] [0902/151344.221233:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] [0902/151344.221249:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] [0902/151344.221254:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=117][err] [0902/151344.221264:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=117][err] [0902/151344.221267:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=117][err] [0902/151344.221268:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed. | Error type: TargetClosedError | Request data - text_length: 20, font: mincho, font_size: 22, line_height: 1.6, letter_spacing: 0.05, padding: 20, use_tategaki_js: False, max_chars_per_line: None | Font path: fonts/GenEiChikugoMin3-R.ttf
+Traceback (most recent call last):
+  File "/app/main.py", line 1064, in render_vertical_text
+    return await renderer_service.render(request)
+  File "/app/main.py", line 917, in render
+    ) = await self._converter.convert_with_playwright(html_content)
+  File "/app/main.py", line 828, in convert_with_playwright
+    page = await browser.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/async_api/_generated.py", line 14173, in new_page
+    await self._impl_obj.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_browser.py", line 230, in new_page
+    return await self._connection.wrap_api_call(inner, title="Create page")
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-uf60qW --remote-debugging-pipe --no-startup-window
+<launched> pid=117
+[pid=117][err] [0902/151344.213263:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=117][err] [0902/151344.213982:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=117][err] [0902/151344.214014:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=117][err] [0902/151344.216515:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=117][err] [0902/151344.218171:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable.
+[pid=117][err] [0902/151344.218471:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] [0902/151344.218496:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] [0902/151344.218502:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=117][err] [0902/151344.218504:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=117][err] [0902/151344.218509:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=117][err] [0902/151344.218512:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=117][err] [0902/151344.221233:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=117][err] [0902/151344.221249:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=117][err] [0902/151344.221254:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=117][err] [0902/151344.221264:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=117][err] [0902/151344.221267:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=117][err] [0902/151344.221268:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+2025-09-02 15:13:45,148 - main - ERROR - [INTERNAL_ERROR] Internal server error | CID: 648b37155a464ee8961838a4997ea512 | Path: http://localhost:8000/render | Status: 500 | Detail: Internal server error
+2025-09-02 15:13:45,882 - main - ERROR - [BATCH_RENDER_ERROR] Batch rendering failed: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-77g5DY --remote-debugging-pipe --no-startup-window
+<launched> pid=158
+[pid=158][err] [0902/151345.328115:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=158][err] [0902/151345.328704:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=158][err] [0902/151345.328737:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=158][err] [0902/151345.331090:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=158][err] [0902/151345.332469:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable.
+[pid=158][err] [0902/151345.332667:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=158][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=158][err] [0902/151345.332686:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=158][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=158][err] [0902/151345.332693:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=158][err] [0902/151345.332695:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=158][err] [0902/151345.332699:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=158][err] [0902/151345.332701:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=158][err] [0902/151345.333726:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=158][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=158][err] [0902/151345.333741:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=158][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=158][err] [0902/151345.333746:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=158][err] [0902/151345.333748:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=158][err] [0902/151345.333750:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=158][err] [0902/151345.333752:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed. | Error type: TargetClosedError
+Traceback (most recent call last):
+  File "/app/main.py", line 1101, in render_vertical_text_batch
+    results = await renderer_service.render_batch(merged_items)
+  File "/app/main.py", line 1035, in render_batch
+    page = await browser.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/async_api/_generated.py", line 14173, in new_page
+    await self._impl_obj.new_page(
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_browser.py", line 230, in new_page
+    return await self._connection.wrap_api_call(inner, title="Create page")
+  File "/usr/local/lib/python3.10/dist-packages/playwright/_impl/_connection.py", line 558, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Browser.new_page: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /ms-playwright/chromium_headless_shell-1187/chrome-linux/headless_shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-setuid-sandbox --font-render-hinting=none --disable-font-subpixel-positioning --disable-dbus --disable-features=VizDisplayCompositor --disable-dev-shm-usage --disable-gpu --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-77g5DY --remote-debugging-pipe --no-startup-window
+<launched> pid=158
+[pid=158][err] [0902/151345.328115:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=158][err] [0902/151345.328704:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=158][err] [0902/151345.328737:ERROR:dbus/bus.cc:408] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[pid=158][err] [0902/151345.331090:WARNING:media/audio/linux/audio_manager_linux.cc:54] Falling back to ALSA for audio output. PulseAudio is not available or could not be initialized.
+[pid=158][err] [0902/151345.332469:WARNING:device/bluetooth/dbus/bluez_dbus_manager.cc:228] Floss manager service not available, cannot set Floss enable/disable.
+[pid=158][err] [0902/151345.332667:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=158][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=158][err] [0902/151345.332686:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=158][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=158][err] [0902/151345.332693:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=158][err] [0902/151345.332695:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=158][err] [0902/151345.332699:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=158][err] [0902/151345.332701:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+[pid=158][err] [0902/151345.333726:ERROR:ui/gl/angle_platform_impl.cc:42] DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=158][err] ERR: DisplayVkXcb.cpp:58 (initialize): xcb_connect() failed, error 1
+[pid=158][err] [0902/151345.333741:ERROR:ui/gl/angle_platform_impl.cc:42] Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=158][err] ERR: Display.cpp:1089 (initialize): ANGLE Display::initialize error 0: Not initialized.
+[pid=158][err] [0902/151345.333746:ERROR:ui/gl/egl_util.cc:92] EGL Driver message (Critical) eglInitialize: Not initialized.
+[pid=158][err] [0902/151345.333748:ERROR:ui/gl/gl_display.cc:640] eglInitialize SwANGLE failed with error EGL_NOT_INITIALIZED
+[pid=158][err] [0902/151345.333750:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
+[pid=158][err] [0902/151345.333752:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
+2025-09-02 15:13:45,882 - main - ERROR - [INTERNAL_ERROR] Internal server error | CID: 1cb0104f7321445cba3b6b40c874de56 | Path: http://localhost:8000/render/batch | Status: 500 | Detail: Internal server error
