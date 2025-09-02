@@ -1,0 +1,14 @@
+# Ruff configuration
+# このリポジトリでは、日本語のコメントや文字列中で全角括弧（「」、『』など）を
+# よく使うため、該当する Ruff のルール `RUF003`（ambiguous-unicode-character-comment）を
+# 無視する設定にしています。
+#
+# `.ruff.toml` は pyproject.toml / ruff.toml と同一のスキーマをサポートしますが、
+# ruff.toml/.ruff.toml では [tool.ruff] ヘッダーを省略します（公式ドキュメント準拠）。
+
+[lint]
+# 無視するルールコードを列挙します。ルールは完全なコード名（例: "RUF003"）で指定してください。
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+# 必要に応じて行長などの追加設定をここに書けます。
+# line-length = 88
