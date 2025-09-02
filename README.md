@@ -9,6 +9,7 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
 - BudouXによる自然な改行
 - 自動トリミング（文字列をピッタリ囲む）
 - フォント選択機能（Gothic/Mincho）
+- 一括レンダリング対応
 
 ## APIエンドポイント
 
@@ -60,6 +61,37 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
 }
 ```
 
+### POST /render/batch
+
+複数のテキストをまとめてレンダリングしてPNG画像を生成します。
+
+- `items` 配列の最大長は50。超過した場合は400 Bad Requestを返します。
+- `defaults` で共通パラメータを指定でき、各アイテムで上書きできます。
+- 無効なフォント指定はアンチック体にフォールバックします。
+
+#### リクエスト例
+
+```jsonc
+{
+  "defaults": {"font": "gothic", "font_size": 20},
+  "items": [
+    {"text": "こんにちは世界"},
+    {"text": "フォントが存在しない例", "font": "unknown_font"}
+  ]
+}
+```
+
+#### レスポンス例
+
+```jsonc
+{
+  "results": [
+    {"image_base64": "...", "width": 120, "height": 200, "processing_time_ms": 456.7, "trimmed": false},
+    {"image_base64": "...", "width": 120, "height": 200, "processing_time_ms": 789.0, "trimmed": true}
+  ]
+}
+```
+
 ## 認証
 
 保護されたエンドポイントにアクセスするには、Bearerトークンが必要です。
@@ -73,6 +105,7 @@ Authorization: Bearer your-secret-token-here
 - `GET /`: APIの基本情報（認証不要）
 - `GET /health`: ヘルスチェック（認証不要）
 - `GET /debug/html`: 生成されるHTMLを確認（要認証）
+- `POST /render/batch`: 複数テキストをまとめてレンダリング（要認証）
 
 ## Docker: ローカル検証手順
 

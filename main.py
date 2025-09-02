@@ -12,7 +12,7 @@ import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Literal, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Tuple
 
 import budoux
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -92,19 +92,16 @@ FONT_CANDIDATES = [
 
 
 def select_font_path(font_name: Optional[str]) -> Optional[str]:
-    """フォント名からフォントパスを解決"""
-    if not font_name:
-        return None
-    path = FONT_MAP.get(font_name.lower())
-    if path:
-        if path.exists():
+    """フォント名からフォントパスを解決。無効な指定はアンチックにフォールバック"""
+    if font_name:
+        path = FONT_MAP.get(font_name.lower())
+        if path and path.exists():
             return str(path)
-        else:
-            logger.error(
-                f"Font file for '{font_name}' not found at {path}, using default font"
-            )
-    else:
         logger.error(f"Invalid font specified: {font_name}, using default font")
+
+    if DEFAULT_FONT_PATH.exists():
+        return str(DEFAULT_FONT_PATH)
+    logger.error(f"Default font not found at {DEFAULT_FONT_PATH}")
     return None
 
 
@@ -324,6 +321,70 @@ class VerticalTextResponse(BaseModel):
     height: int = Field(..., description="画像の高さ")
     processing_time_ms: float = Field(..., description="処理時間（ミリ秒）")
     trimmed: bool = Field(..., description="画像がトリミングされたかどうか")
+
+
+class _BatchRenderBase(BaseModel):
+    font: Optional[str] = Field(default=None, description="使用するフォント")
+    font_size: int = Field(default=20, ge=8, le=100, description="フォントサイズ")
+    line_height: float = Field(default=1.6, ge=1.0, le=3.0, description="行間")
+    letter_spacing: float = Field(
+        default=0.05,
+        ge=0,
+        le=0.5,
+        description="文字間（em単位）",
+    )
+    padding: int = Field(default=20, ge=0, le=100, description="余白（ピクセル）")
+    use_tategaki_js: bool = Field(
+        default=False,
+        description="Tategaki.jsライブラリを使用",
+    )
+    max_chars_per_line: Optional[int] = Field(
+        default=None,
+        ge=1,
+        le=100,
+        description="1行あたりの最大文字数（BudouXで自動改行）",
+    )
+    embed_font: bool = Field(
+        default=False,
+        description="フォントをBase64でHTMLに埋め込む（大容量のため通常は無効推奨）",
+    )
+
+
+class BatchRenderItem(_BatchRenderBase):
+    text: str = Field(..., description="レンダリングするテキスト")
+
+    @validator("text")
+    def text_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("テキストが空です")
+        return v
+
+
+class BatchRenderDefaults(_BatchRenderBase):
+    pass
+
+
+class BatchRenderRequest(BaseModel):
+    defaults: Optional[BatchRenderDefaults] = None
+    items: List[BatchRenderItem] = Field(..., min_length=1)
+
+
+class BatchRenderError(BaseModel):
+    code: str
+    message: str
+
+
+class BatchRenderItemResult(BaseModel):
+    image_base64: Optional[str] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
+    processing_time_ms: Optional[float] = None
+    trimmed: Optional[bool] = None
+    error: Optional[BatchRenderError] = None
+
+
+class BatchRenderResponse(BaseModel):
+    results: List[BatchRenderItemResult]
 
 
 class JapaneseVerticalHTMLGenerator:
@@ -690,6 +751,50 @@ class HTMLToPNGConverter:
     """HTMLからPNGへの変換クラス（Playwright使用）"""
 
     @staticmethod
+    async def _render_on_page(page, html_content: str) -> Tuple[bytes, int, int]:
+        await page.set_content(html_content, wait_until="domcontentloaded")
+        await page.wait_for_function("() => document.fonts.ready")
+        await page.evaluate(
+            """
+            () => {
+                document.body.style.backgroundColor = 'transparent';
+                document.documentElement.style.backgroundColor = 'transparent';
+                const elements = document.querySelectorAll('*');
+                elements.forEach(el => {
+                    const computed = window.getComputedStyle(el);
+                    if (computed.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+                        computed.backgroundColor !== 'transparent') {
+                        el.style.backgroundColor = 'transparent';
+                    }
+                });
+            }
+        """
+        )
+        dimensions = await page.evaluate(
+            """
+            () => {
+                const container = document.querySelector('.vertical-text-container');
+                return {
+                    width: Math.ceil(container.scrollWidth),
+                    height: Math.ceil(container.scrollHeight)
+                };
+            }
+        """
+        )
+        MAX_DIM = 8000
+        actual_width = max(
+            1,
+            min(int(dimensions["width"]) if dimensions.get("width") else 1, MAX_DIM),
+        )
+        actual_height = max(
+            1,
+            min(int(dimensions["height"]) if dimensions.get("height") else 1, MAX_DIM),
+        )
+        locator = page.locator(".vertical-text-container")
+        screenshot_bytes = await locator.screenshot(type="png", omit_background=True)
+        return screenshot_bytes, actual_width, actual_height
+
+    @staticmethod
     async def convert_with_playwright(
         html_content: str,
     ) -> Tuple[float, bytes, int, int]:
@@ -724,67 +829,12 @@ class HTMLToPNGConverter:
                         page = await browser.new_page(
                             viewport={"width": 10, "height": 10}
                         )
-                        # set a timeout for navigation / content loading (ms)
                         page.set_default_navigation_timeout(30_000)
-                        await page.set_content(
-                            html_content, wait_until="domcontentloaded"
-                        )
-                        await page.wait_for_function("() => document.fonts.ready")
-                        await page.evaluate(
-                            """
-                            () => {
-                                document.body.style.backgroundColor = 'transparent';
-                                document.documentElement.style.backgroundColor = 'transparent';
-                                const elements = document.querySelectorAll('*');
-                                elements.forEach(el => {
-                                    const computed = window.getComputedStyle(el);
-                                    if (computed.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
-                                        computed.backgroundColor !== 'transparent') {
-                                        el.style.backgroundColor = 'transparent';
-                                    }
-                                });
-                            }
-                        """
-                        )
-                        # 実際のコンテンツサイズを取得して、その大きさで撮影
-                        dimensions = await page.evaluate(
-                            """
-                            () => {
-                                const container = document.querySelector('.vertical-text-container');
-                                return {
-                                    width: Math.ceil(container.scrollWidth),
-                                    height: Math.ceil(container.scrollHeight)
-                                };
-                            }
-                        """
-                        )
-
-                        # 安全のため過大なサイズはクランプ（Chromiumの制限/メモリ圧迫回避）
-                        MAX_DIM = 8000
-                        actual_width = max(
-                            1,
-                            min(
-                                int(dimensions["width"])
-                                if dimensions.get("width")
-                                else 1,
-                                MAX_DIM,
-                            ),
-                        )
-                        actual_height = max(
-                            1,
-                            min(
-                                int(dimensions["height"])
-                                if dimensions.get("height")
-                                else 1,
-                                MAX_DIM,
-                            ),
-                        )
-
-                        # 要素のスクリーンショット（ビューポート拡大は行わない）
-                        locator = page.locator(".vertical-text-container")
-                        screenshot_bytes = await locator.screenshot(
-                            type="png", omit_background=True
-                        )
+                        (
+                            screenshot_bytes,
+                            actual_width,
+                            actual_height,
+                        ) = await HTMLToPNGConverter._render_on_page(page, html_content)
                     finally:
                         try:
                             if page is not None:
@@ -833,22 +883,21 @@ def trim_image(image_bytes: bytes) -> Tuple[Image.Image, bool]:
         raise
 
 
-# グローバルインスタンス
-html_generator = JapaneseVerticalHTMLGenerator()
-converter = HTMLToPNGConverter()
+# サービスクラス
 
 
-@app.post(
-    "/render",
-    response_model=VerticalTextResponse,
-    dependencies=[Depends(verify_token)],
-)
-async def render_vertical_text(request: VerticalTextRequest):
-    """縦書きテキストをレンダリング（認証必須）"""
-    try:
+class VerticalTextRendererService:
+    """縦書きレンダリング処理を提供するサービス"""
+
+    def __init__(
+        self, html_gen: JapaneseVerticalHTMLGenerator, conv: HTMLToPNGConverter
+    ):
+        self._html_gen = html_gen
+        self._converter = conv
+
+    async def render(self, request: VerticalTextRequest) -> VerticalTextResponse:
         font_path = select_font_path(request.font)
-        # HTML生成
-        html_content = html_generator.create_vertical_html(
+        html_content = self._html_gen.create_vertical_html(
             text=request.text,
             font_size=request.font_size,
             line_height=request.line_height,
@@ -860,18 +909,14 @@ async def render_vertical_text(request: VerticalTextRequest):
             embed_font=request.embed_font,
         )
 
-        # Playwrightで変換実行
         (
             processing_time,
             screenshot_bytes,
-            actual_width,
-            actual_height,
-        ) = await converter.convert_with_playwright(html_content)
+            _,
+            _,
+        ) = await self._converter.convert_with_playwright(html_content)
 
-        # 画像のトリミング処理
         img, trimmed = trim_image(screenshot_bytes)
-
-        # トリミングされた画像をバイトデータとして保存
         img_byte_arr = io.BytesIO()
         try:
             img.save(img_byte_arr, format="PNG", optimize=True)
@@ -884,8 +929,6 @@ async def render_vertical_text(request: VerticalTextRequest):
             img_byte_arr.close()
 
         width, height = img.size
-
-        # Base64エンコード
         image_base64 = base64.b64encode(image_data).decode("utf-8")
 
         return VerticalTextResponse(
@@ -896,8 +939,114 @@ async def render_vertical_text(request: VerticalTextRequest):
             trimmed=trimmed,
         )
 
+    async def render_batch(
+        self, items: List["BatchRenderItem"]
+    ) -> List["BatchRenderItemResult"]:
+        results: List[BatchRenderItemResult] = []
+        from playwright.async_api import async_playwright
+
+        async with _convert_semaphore:
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(
+                    headless=True,
+                    args=[
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--font-render-hinting=none",
+                        "--disable-font-subpixel-positioning",
+                        "--disable-dbus",
+                        "--disable-features=VizDisplayCompositor",
+                        "--disable-dev-shm-usage",
+                        "--disable-gpu",
+                        "--single-process",
+                    ],
+                )
+                try:
+                    for item in items:
+                        page = await browser.new_page(
+                            viewport={"width": 10, "height": 10}
+                        )
+                        start_time = time.time()
+                        try:
+                            font_path = select_font_path(item.font)
+                            html_content = self._html_gen.create_vertical_html(
+                                text=item.text,
+                                font_size=item.font_size,
+                                line_height=item.line_height,
+                                letter_spacing=item.letter_spacing,
+                                padding=item.padding,
+                                use_tategaki_js=item.use_tategaki_js,
+                                max_chars_per_line=item.max_chars_per_line,
+                                font_path=font_path,
+                                embed_font=item.embed_font,
+                            )
+                            screenshot_bytes, _, _ = (
+                                await self._converter._render_on_page(
+                                    page, html_content
+                                )
+                            )
+                            img, trimmed = trim_image(screenshot_bytes)
+                            img_byte_arr = io.BytesIO()
+                            try:
+                                img.save(img_byte_arr, format="PNG", optimize=True)
+                                image_data = img_byte_arr.getvalue()
+                            finally:
+                                try:
+                                    img.close()
+                                except Exception:
+                                    pass
+                                img_byte_arr.close()
+                            width, height = img.size
+                            image_base64 = base64.b64encode(image_data).decode("utf-8")
+                            processing_time = (time.time() - start_time) * 1000
+                            results.append(
+                                BatchRenderItemResult(
+                                    image_base64=image_base64,
+                                    width=width,
+                                    height=height,
+                                    processing_time_ms=processing_time,
+                                    trimmed=trimmed,
+                                )
+                            )
+                        except Exception as e:
+                            logger.error(
+                                f"[BATCH_RENDER_ERROR] Rendering failed: {str(e)} | "
+                                f"Error type: {type(e).__name__} | "
+                                f"Text length: {len(item.text)} | Font: {item.font}",
+                                exc_info=True,
+                            )
+                            results.append(
+                                BatchRenderItemResult(
+                                    error=BatchRenderError(
+                                        code="RENDER_ERROR",
+                                        message="Rendering failed",
+                                    )
+                                )
+                            )
+                        finally:
+                            await page.close()
+                finally:
+                    await browser.close()
+
+        return results
+
+
+# グローバルインスタンス
+html_generator = JapaneseVerticalHTMLGenerator()
+converter = HTMLToPNGConverter()
+renderer_service = VerticalTextRendererService(html_generator, converter)
+
+
+@app.post(
+    "/render",
+    response_model=VerticalTextResponse,
+    dependencies=[Depends(verify_token)],
+)
+async def render_vertical_text(request: VerticalTextRequest):
+    """縦書きテキストをレンダリング（認証必須）"""
+    try:
+        return await renderer_service.render(request)
     except Exception as e:
-        # 内部詳細はレスポンスに出さず、ログのみに残す
         logger.error(
             f"[RENDER_ERROR] Rendering failed: {str(e)} | "
             f"Error type: {type(e).__name__} | "
@@ -906,6 +1055,35 @@ async def render_vertical_text(request: VerticalTextRequest):
             f"letter_spacing: {request.letter_spacing}, padding: {request.padding}, "
             f"use_tategaki_js: {request.use_tategaki_js}, max_chars_per_line: {request.max_chars_per_line} | "
             f"Font path: {select_font_path(request.font)}",
+            exc_info=True,
+        )
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@app.post(
+    "/render/batch",
+    response_model=BatchRenderResponse,
+    dependencies=[Depends(verify_token)],
+)
+async def render_vertical_text_batch(request: BatchRenderRequest):
+    """複数テキストをまとめてレンダリング（認証必須）"""
+    if len(request.items) > 50:
+        raise HTTPException(status_code=400, detail="items length must be 50 or less")
+
+    defaults = (
+        request.defaults.model_dump(exclude_unset=True) if request.defaults else {}
+    )
+    merged_items: List[BatchRenderItem] = []
+    for item in request.items:
+        params = {**defaults, **item.model_dump(exclude_unset=True)}
+        merged_items.append(BatchRenderItem(**params))
+
+    try:
+        results = await renderer_service.render_batch(merged_items)
+        return BatchRenderResponse(results=results)
+    except Exception as e:
+        logger.error(
+            f"[BATCH_RENDER_ERROR] Batch rendering failed: {str(e)} | Error type: {type(e).__name__}",
             exc_info=True,
         )
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -930,6 +1108,7 @@ async def root():
         },
         "endpoints": {
             "/render": "縦書きテキストをレンダリング（要認証）",
+            "/render/batch": "複数テキストを一括レンダリング（要認証）",
             "/debug/html": "生成されるHTMLを確認（要認証）",
             "/health": "ヘルスチェック（認証不要）",
         },
