@@ -21,6 +21,8 @@ test_results/
 chrome_test_py.py
 test_output/
 operation_checks_output/
+api_errors.log
+logs/
 
 # VSCode settings
 .vscode/

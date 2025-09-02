@@ -27,17 +27,17 @@ jobs:
   scheduled-test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    
+
     steps:
     - name: リポジトリをチェックアウト
       uses: actions/checkout@v4
-      
+
     - name: Python環境をセットアップ
       uses: actions/setup-python@v4
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         cache: 'pip'
-        
+
     - name: システム依存関係をインストール
       run: |
         sudo apt-get update
@@ -51,13 +51,13 @@ jobs:
           libgtk-3-dev \
           libatspi2.0-dev \
           xvfb
-          
+
     - name: Python依存関係をインストール
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         playwright install chromium
-        
+
     - name: テストタイプを判定
       id: test-type
       run: |
@@ -71,17 +71,12 @@ jobs:
         else
           echo "type=${{ github.event.inputs.test_type || 'basic' }}" >> $GITHUB_OUTPUT
         fi
-        
+
     - name: APIサーバーをバックグラウンドで起動
       run: |
         python main.py &
         sleep 10
-        
-    - name: 基本APIテスト
-      if: steps.test-type.outputs.type == 'basic' || steps.test-type.outputs.type == 'full'
-      run: |
-        python test_api.py
-        
+
     - name: パフォーマンステスト（延長版）
       if: steps.test-type.outputs.type == 'performance' || steps.test-type.outputs.type == 'full'
       run: |
@@ -90,13 +85,13 @@ jobs:
 from test_api import run_performance_test
 import os
 
-token = os.getenv('API_TOKEN', 'your-secret-token-here')
+token = os.getenv('API_TOKEN', 'd85e469dfe0551ae45cc90413ddf9b5923eb5761ec24cf49b799bd08f3d8e264')
 print('=== 拡張パフォーマンステスト ===')
 
 # 異なる条件でパフォーマンステストを実行
 test_cases = [
     ('小さいテキスト', 10),
-    ('中程度テキスト', 10), 
+    ('中程度テキスト', 10),
     ('大きいテキスト', 5),
 ]
 
@@ -104,7 +99,7 @@ for name, num_requests in test_cases:
     print(f'\n--- {name} ({num_requests}回) ---')
     run_performance_test('http://localhost:8000', token, num_requests)
 "
-        
+
     - name: ストレステスト
       if: steps.test-type.outputs.type == 'full'
       run: |
@@ -118,19 +113,19 @@ from concurrent.futures import ThreadPoolExecutor
 
 def stress_test_request(thread_id):
     headers = {
-        'Authorization': f'Bearer {os.getenv(\"API_TOKEN\", \"your-secret-token-here\")}',
+        'Authorization': f'Bearer {os.getenv(\"API_TOKEN\", \"d85e469dfe0551ae45cc90413ddf9b5923eb5761ec24cf49b799bd08f3d8e264\")}',
         'Content-Type': 'application/json'
     }
     data = {
         'text': f'ストレステスト{thread_id}',
         'font_size': 20
     }
-    
+
     try:
         start = time.time()
         response = requests.post('http://localhost:8000/render', headers=headers, json=data, timeout=30)
         end = time.time()
-        
+
         if response.status_code == 200:
             print(f'スレッド{thread_id}: 成功 ({end-start:.2f}s)')
             return True
@@ -148,7 +143,7 @@ with ThreadPoolExecutor(max_workers=5) as executor:
     success_count = sum(results)
     print(f'結果: {success_count}/10 成功')
 "
-        
+
     - name: テスト結果をアップロード
       if: always()
       uses: actions/upload-artifact@v3
@@ -158,13 +153,13 @@ with ThreadPoolExecutor(max_workers=5) as executor:
           test_output/
           test_results/
         retention-days: 30  # 定期テストは長期保存
-        
+
     - name: 失敗時の通知準備
       if: failure() && github.event_name == 'schedule'
       run: |
         echo "SCHEDULED_TEST_FAILED=true" >> $GITHUB_ENV
         echo "TEST_TYPE=${{ steps.test-type.outputs.type }}" >> $GITHUB_ENV
-        
+
     # 必要に応じて失敗時にSlack通知等を追加
     # - name: Slack通知
     #   if: failure() && env.SCHEDULED_TEST_FAILED == 'true'

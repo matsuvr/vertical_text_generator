@@ -789,3 +789,5 @@ Browser logs:
 [pid=158][err] [0902/151345.333750:ERROR:ui/gl/gl_display.cc:675] Initialization of all EGL display types failed.
 [pid=158][err] [0902/151345.333752:ERROR:ui/ozone/common/gl_ozone_egl.cc:26] GLDisplayEGL::Initialize failed.
 2025-09-02 15:13:45,882 - main - ERROR - [INTERNAL_ERROR] Internal server error | CID: 1cb0104f7321445cba3b6b40c874de56 | Path: http://localhost:8000/render/batch | Status: 500 | Detail: Internal server error
+2025-09-02 16:00:29,977 - main - ERROR - [UNAUTHORIZED] Unauthorized | CID: 94797077792d4945a746e829751b681f | Path: http://localhost:8000/render | Status: 401 | Detail: Unauthorized
+2025-09-02 16:10:17,506 - main - ERROR - [UNAUTHORIZED] Unauthorized | CID: c7615abe15f440d49922a895b83774b6 | Path: http://localhost:8000/render | Status: 401 | Detail: Unauthorized
