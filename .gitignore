@@ -23,6 +23,7 @@ test_output/
 operation_checks_output/
 api_errors.log
 logs/
+*/api_errors.log
 
 # VSCode settings
 .vscode/
