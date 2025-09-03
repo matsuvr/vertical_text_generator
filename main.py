@@ -907,7 +907,6 @@ class JapaneseVerticalHTMLGenerator:
             font-size: {font_size}px;
             line-height: {line_height};
             letter-spacing: {letter_spacing}em;
-            font-feature-settings: 'vert' 1, 'vrt2' 1, 'vkrn' 1, 'vpal' 1;
             /* コンテンツの自然な大きさを尊重 */
             display: inline-block;
             width: auto;
