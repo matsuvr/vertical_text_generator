@@ -1,9 +1,8 @@
-import main
 from fastapi.testclient import TestClient
 
+import main
 
-def auth_header():
-    return {"Authorization": "Bearer your-secret-token-here"}
+from tests.helpers import auth_header
 
 
 def test_batch_items_limit():

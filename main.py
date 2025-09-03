@@ -6,6 +6,7 @@ import html
 import io
 import logging
 import logging.handlers
+import math
 import os
 import re
 import time
@@ -97,6 +98,9 @@ FONT_CANDIDATES = [
     Path("/System/Library/Fonts/Hiragino Sans GB.ttc"),  # macOS
     Path("C:/Windows/Fonts/msgothic.ttc"),  # Windows
 ]
+
+# Base64埋め込みフォントの最大許容サイズ（環境変数で上書き可能）
+MAX_FONT_BASE64_SIZE = int(os.getenv("MAX_FONT_BASE64_SIZE", "40000000"))
 
 
 # ---------- Persistent Playwright browser and page pool ----------
@@ -651,6 +655,23 @@ class JapaneseVerticalHTMLGenerator:
                 for chunk in chunks:
                     chunk_length = len(chunk)
 
+                    # チャンクが最大文字数を超える場合、強制的に分割（バルク処理）
+                    if chunk_length > max_chars_per_line:
+                        if current_line:
+                            processed_lines.append(current_line)
+                            current_line = ""
+                            current_length = 0
+
+                        parts = [
+                            chunk[i : i + max_chars_per_line]
+                            for i in range(0, chunk_length, max_chars_per_line)
+                        ]
+                        for part in parts[:-1]:
+                            processed_lines.append(part)
+                        # 最後のパートは次の処理に回す
+                        chunk = parts[-1]
+                        chunk_length = len(chunk)
+
                     if current_length + chunk_length <= max_chars_per_line:
                         # 現在の行に追加
                         current_line += chunk
@@ -749,24 +770,21 @@ class JapaneseVerticalHTMLGenerator:
         font_size: int,
         line_height: float,
         padding: int,
+        max_chars_per_line: int,
     ) -> Tuple[int, int]:
-        """テキストからキャンバスサイズを推定"""
+        """テキストと行長上限からキャンバスサイズを一貫したロジックで推定"""
         lines = text.split("\n")
-        max_line_chars = max(len(line) for line in lines) if lines else 0
-        num_lines = len(lines)
-
-        column_width = int(font_size * line_height * 1.2)
-        estimated_height = int(
-            (max_line_chars * font_size * line_height) + (padding * 2) + 50,
-        )
-
-        chars_per_column = max(10, int(estimated_height / (font_size * line_height)))
         total_chars = sum(len(line) for line in lines)
-        estimated_columns = max(
-            1,
-            (total_chars + num_lines - 1) // chars_per_column + 1,
-        )
+        column_width = int(font_size * line_height * 1.2)
 
+        # 行の最大文字数（縦方向の最大段数）に合わせて高さを見積もり、
+        # 総文字数から必要列数を算出する。
+        chars_per_column = max(1, int(max_chars_per_line))
+        estimated_columns = max(1, int(math.ceil(total_chars / chars_per_column)))
+
+        estimated_height = int(
+            (chars_per_column * font_size * line_height) + (padding * 2) + 50,
+        )
         estimated_width = (estimated_columns * column_width) + (padding * 2)
         return max(200, estimated_width), max(200, estimated_height)
 
@@ -794,54 +812,38 @@ class JapaneseVerticalHTMLGenerator:
         font_path: Optional[str] = None,
     ) -> str:
         """縦書きHTMLを生成"""
-        # BudouXによる自動改行処理
-        if max_chars_per_line is not None:
-            text = self._apply_budoux_line_breaks(text, max_chars_per_line)
+        # 最大文字数が未指定なら、総文字数の平方根に最も近い自然数を採用（以後の計算でも再利用）
+        effective_max_chars = max_chars_per_line
+        if effective_max_chars is None:
+            total_chars_no_nl = len(text.replace("\n", ""))
+            effective_max_chars = max(1, round(math.sqrt(total_chars_no_nl)))
+
+        # BudouXによる自動改行処理（1回で十分）
+        text = self._apply_budoux_line_breaks(text, effective_max_chars)
 
         # フォントを常にBase64でエンコードして埋め込む
         font_base64: Optional[str] = self._encode_font_as_base64(font_path)
         # 以前は3MB以上を回避していたが、ローカルフォント（源暎系）を確実に使うため閾値を引き上げ
-        # （Base64化で ~1.3x になるため、20MB まで許容）
-        if font_base64 and len(font_base64) > 20_000_000:
+        # （Base64化で ~1.3x になるため、40MB まで許容）
+        if font_base64 and len(font_base64) > MAX_FONT_BASE64_SIZE:
             logger.error(
-                "[FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): %s bytes",
+                "[FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): %s bytes (limit=%s)",
                 len(font_base64),
+                MAX_FONT_BASE64_SIZE,
             )
             font_base64 = None
 
         # テキスト処理
         processed_text = self._process_text_for_vertical(text)
 
-        # テキストの文字数を基に適切なサイズを計算
-        lines = text.split("\n")
-        max_line_chars = max(len(line) for line in lines) if lines else 0
-        num_lines = len(lines)
-
-        # 基本的な幅の計算（1列あたりの幅）
-        column_width = int(font_size * line_height * 1.2)  # 1文字の幅 + 余裕
-
-        # 高さの計算（最長行を基準に）
-        estimated_height = int(
-            (max_line_chars * font_size * line_height) + (padding * 2) + 50,
+        # テキストの文字数を基に適切なサイズを一元ロジックで計算
+        estimated_width, estimated_height = self._calculate_canvas_size(
+            text=text,
+            font_size=font_size,
+            line_height=line_height,
+            padding=padding,
+            max_chars_per_line=effective_max_chars,
         )
-
-        # 幅の計算（行数を考慮）
-        # 1列に収まる文字数を計算
-        chars_per_column = max(10, int(estimated_height / (font_size * line_height)))
-
-        # 必要な列数を計算
-        total_chars = sum(len(line) for line in lines)
-        estimated_columns = max(
-            1,
-            (total_chars + num_lines - 1) // chars_per_column + 1,
-        )
-
-        # 最終的な幅（複数列の場合）
-        estimated_width = (estimated_columns * column_width) + (padding * 2)
-
-        # 最小幅を保証
-        estimated_width = max(200, estimated_width)
-        estimated_height = max(200, estimated_height)
 
         # フォントフェイス定義（埋め込み有効時のみ）
         font_face = self._font_face_css(font_base64)
@@ -909,11 +911,14 @@ class JapaneseVerticalHTMLGenerator:
             /* コンテンツの自然な大きさを尊重 */
             display: inline-block;
             width: auto;
-            height: auto;
+            /* 折返し（列生成）を促すために高さを固定 */
+            height: {estimated_height}px;
             color: #000;
             overflow: visible;
             word-break: normal;
             text-align: start;
+            /* 空白と改行を保持し、自動折り返しを無効化 */
+            white-space: pre;
         }}
 
         /* 縦中横（tate-chu-yoko） */
@@ -976,9 +981,7 @@ class JapaneseVerticalHTMLGenerator:
 </head>
 <body>
     <div class="vertical-text-container">
-        <div class="vertical-text-content">
-            {processed_text}
-        </div>
+        <div class="vertical-text-content">{processed_text}</div>
     </div>
     {tategaki_script}
 </body>

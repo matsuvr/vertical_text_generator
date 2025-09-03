@@ -1,12 +1,9 @@
 from fastapi.testclient import TestClient
 
 import main
+from tests.helpers import auth_header
 
 client = TestClient(main.app)
-
-
-def auth_header():
-    return {"Authorization": "Bearer your-secret-token-here"}
 
 
 def test_root():
