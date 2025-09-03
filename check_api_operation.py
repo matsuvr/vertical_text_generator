@@ -131,6 +131,68 @@ def check_batch_render_endpoint(timestamp):
         print(f"   Error: {e}")
 
 
+def check_linewrapping_cases(timestamp):
+    """/render の行長制御（文字数指定あり/なし）の確認を行います。"""
+    print("\nChecking line wrapping behavior (with/without max_chars_per_line)...")
+    url = f"{BASE_URL}/render"
+
+    # 十分な長さのサンプル文章
+    sample_text = (
+        "これは改行制御の確認用の文章です。"
+        "BudouXにより自然な位置で改行され、"
+        "行の文字数が安定することを確認します。"
+        "同じ文章で、指定ありと指定なしを比較します。"
+    )
+
+    # 1) 文字数指定あり
+    specified_limit = 7
+    payload_with_limit = {
+        "text": sample_text,
+        "font_size": 22,
+        "padding": 20,
+        "max_chars_per_line": specified_limit,
+    }
+    try:
+        resp = requests.post(url, headers=HEADERS, data=json.dumps(payload_with_limit))
+        if resp.status_code == 200:
+            data = resp.json()
+            print(
+                f"✅ /render with max_chars_per_line={specified_limit} ok | size: {data.get('width')}x{data.get('height')}"
+            )
+            save_files("render", timestamp, data, suffix=f"with_limit_{specified_limit}")
+        elif resp.status_code == 401:
+            print("❌ /render with limit returned 401 Unauthorized. Check API_TOKEN.")
+        else:
+            print(f"❌ /render with limit failed: {resp.status_code}")
+            print(f"   Response: {resp.text[:200]}...")
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Could not connect to the API at {url}.")
+        print(f"   Error: {e}")
+
+    # 2) 文字数指定なし（自動: 総文字数の平方根に最も近い自然数）
+    payload_auto = {
+        "text": sample_text,
+        "font_size": 22,
+        "padding": 20,
+    }
+    try:
+        resp = requests.post(url, headers=HEADERS, data=json.dumps(payload_auto))
+        if resp.status_code == 200:
+            data = resp.json()
+            print(
+                f"✅ /render without limit ok (auto) | size: {data.get('width')}x{data.get('height')}"
+            )
+            save_files("render", timestamp, data, suffix="auto_limit")
+        elif resp.status_code == 401:
+            print("❌ /render without limit returned 401 Unauthorized. Check API_TOKEN.")
+        else:
+            print(f"❌ /render without limit failed: {resp.status_code}")
+            print(f"   Response: {resp.text[:200]}...")
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Could not connect to the API at {url}.")
+        print(f"   Error: {e}")
+
+
 if __name__ == "__main__":
     print("--- API Operation Check Start ---")
     
@@ -145,5 +207,6 @@ if __name__ == "__main__":
 
     check_render_endpoint(timestamp_str)
     check_batch_render_endpoint(timestamp_str)
+    check_linewrapping_cases(timestamp_str)
     
     print("\n--- API Operation Check End ---")

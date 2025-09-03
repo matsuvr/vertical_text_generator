@@ -6,6 +6,7 @@ import html
 import io
 import logging
 import logging.handlers
+import math
 import os
 import re
 import time
@@ -651,6 +652,19 @@ class JapaneseVerticalHTMLGenerator:
                 for chunk in chunks:
                     chunk_length = len(chunk)
 
+                    # チャンクが最大文字数を超える場合、強制的に分割
+                    while chunk_length > max_chars_per_line:
+                        if current_line:
+                            processed_lines.append(current_line)
+                            current_line = ""
+                            current_length = 0
+
+                        # 最大文字数分だけ取り出して追加
+                        part = chunk[:max_chars_per_line]
+                        processed_lines.append(part)
+                        chunk = chunk[max_chars_per_line:]
+                        chunk_length = len(chunk)
+
                     if current_length + chunk_length <= max_chars_per_line:
                         # 現在の行に追加
                         current_line += chunk
@@ -752,21 +766,17 @@ class JapaneseVerticalHTMLGenerator:
     ) -> Tuple[int, int]:
         """テキストからキャンバスサイズを推定"""
         lines = text.split("\n")
-        max_line_chars = max(len(line) for line in lines) if lines else 0
-        num_lines = len(lines)
-
         column_width = int(font_size * line_height * 1.2)
-        estimated_height = int(
-            (max_line_chars * font_size * line_height) + (padding * 2) + 50,
-        )
-
-        chars_per_column = max(10, int(estimated_height / (font_size * line_height)))
         total_chars = sum(len(line) for line in lines)
-        estimated_columns = max(
-            1,
-            (total_chars + num_lines - 1) // chars_per_column + 1,
-        )
 
+        # max_chars_per_line 無指定ケースの汎用推定：
+        # 縦方向（1列あたり）の文字数を sqrt(total_chars)+1 程度にして概ね正方形へ。
+        chars_per_column = max(2, int(math.ceil(math.sqrt(max(1, total_chars)))) + 1)
+        estimated_columns = max(1, int(math.ceil(total_chars / chars_per_column)))
+
+        estimated_height = int(
+            (chars_per_column * font_size * line_height) + (padding * 2) + 50,
+        )
         estimated_width = (estimated_columns * column_width) + (padding * 2)
         return max(200, estimated_width), max(200, estimated_height)
 
@@ -794,15 +804,19 @@ class JapaneseVerticalHTMLGenerator:
         font_path: Optional[str] = None,
     ) -> str:
         """縦書きHTMLを生成"""
-        # BudouXによる自動改行処理
-        if max_chars_per_line is not None:
-            text = self._apply_budoux_line_breaks(text, max_chars_per_line)
+        # 最大文字数が未指定なら、総文字数の平方根に最も近い自然数を採用
+        if max_chars_per_line is None:
+            total_chars = len(text.replace("\n", ""))
+            max_chars_per_line = max(1, round(math.sqrt(total_chars)))
+
+        # BudouXによる自動改行処理（1回で十分）
+        text = self._apply_budoux_line_breaks(text, max_chars_per_line)
 
         # フォントを常にBase64でエンコードして埋め込む
         font_base64: Optional[str] = self._encode_font_as_base64(font_path)
         # 以前は3MB以上を回避していたが、ローカルフォント（源暎系）を確実に使うため閾値を引き上げ
-        # （Base64化で ~1.3x になるため、20MB まで許容）
-        if font_base64 and len(font_base64) > 20_000_000:
+        # （Base64化で ~1.3x になるため、40MB まで許容）
+        if font_base64 and len(font_base64) > 40_000_000:
             logger.error(
                 "[FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): %s bytes",
                 len(font_base64),
@@ -820,21 +834,31 @@ class JapaneseVerticalHTMLGenerator:
         # 基本的な幅の計算（1列あたりの幅）
         column_width = int(font_size * line_height * 1.2)  # 1文字の幅 + 余裕
 
-        # 高さの計算（最長行を基準に）
-        estimated_height = int(
-            (max_line_chars * font_size * line_height) + (padding * 2) + 50,
-        )
-
-        # 幅の計算（行数を考慮）
-        # 1列に収まる文字数を計算
-        chars_per_column = max(10, int(estimated_height / (font_size * line_height)))
-
-        # 必要な列数を計算
         total_chars = sum(len(line) for line in lines)
-        estimated_columns = max(
-            1,
-            (total_chars + num_lines - 1) // chars_per_column + 1,
-        )
+
+        if max_chars_per_line is None:
+            # 無指定時: 縦方向（1列あたり）の文字数を sqrt(total_chars)+1 に設定し、概ね正方形に近づける
+            chars_per_column = max(
+                2, int(math.ceil(math.sqrt(max(1, total_chars)))) + 1
+            )
+            estimated_columns = max(1, int(math.ceil(total_chars / chars_per_column)))
+            estimated_height = int(
+                (chars_per_column * font_size * line_height) + (padding * 2) + 50,
+            )
+        else:
+            # 指定あり: これまでの推定ロジックを維持（回帰防止）
+            estimated_height = int(
+                (max_line_chars * font_size * line_height) + (padding * 2) + 50,
+            )
+            # 1列に収まる文字数を計算
+            chars_per_column = max(
+                10, int(estimated_height / (font_size * line_height))
+            )
+            # 必要な列数を計算
+            estimated_columns = max(
+                1,
+                (total_chars + num_lines - 1) // chars_per_column + 1,
+            )
 
         # 最終的な幅（複数列の場合）
         estimated_width = (estimated_columns * column_width) + (padding * 2)
@@ -909,11 +933,14 @@ class JapaneseVerticalHTMLGenerator:
             /* コンテンツの自然な大きさを尊重 */
             display: inline-block;
             width: auto;
-            height: auto;
+            /* 折返し（列生成）を促すために高さを固定 */
+            height: {estimated_height}px;
             color: #000;
             overflow: visible;
             word-break: normal;
             text-align: start;
+            /* 自動折り返しを無効化 */
+            white-space: pre;
         }}
 
         /* 縦中横（tate-chu-yoko） */
@@ -976,9 +1003,7 @@ class JapaneseVerticalHTMLGenerator:
 </head>
 <body>
     <div class="vertical-text-container">
-        <div class="vertical-text-content">
-            {processed_text}
-        </div>
+        <div class="vertical-text-content">{processed_text}</div>
     </div>
     {tategaki_script}
 </body>
