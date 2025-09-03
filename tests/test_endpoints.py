@@ -1,15 +1,9 @@
-import os
-
 from fastapi.testclient import TestClient
 
 import main
+from tests.helpers import auth_header
 
 client = TestClient(main.app)
-
-
-def auth_header():
-    token = os.environ.get("API_TOKEN", "your-secret-token-here")
-    return {"Authorization": f"Bearer {token}"}
 
 
 def test_root():

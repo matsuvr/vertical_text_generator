@@ -144,6 +144,24 @@ def check_linewrapping_cases(timestamp):
         "同じ文章で、指定ありと指定なしを比較します。"
     )
 
+    def _request_and_log(payload: dict, label: str, suffix: str):
+        try:
+            resp = requests.post(url, headers=HEADERS, data=json.dumps(payload))
+            if resp.status_code == 200:
+                data = resp.json()
+                print(
+                    f"✅ /render {label} | size: {data.get('width')}x{data.get('height')}"
+                )
+                save_files("render", timestamp, data, suffix=suffix)
+            elif resp.status_code == 401:
+                print("❌ /render returned 401 Unauthorized. Check API_TOKEN.")
+            else:
+                print(f"❌ /render {label} failed: {resp.status_code}")
+                print(f"   Response: {resp.text[:200]}...")
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Could not connect to the API at {url}.")
+            print(f"   Error: {e}")
+
     # 1) 文字数指定あり
     specified_limit = 7
     payload_with_limit = {
@@ -152,22 +170,11 @@ def check_linewrapping_cases(timestamp):
         "padding": 20,
         "max_chars_per_line": specified_limit,
     }
-    try:
-        resp = requests.post(url, headers=HEADERS, data=json.dumps(payload_with_limit))
-        if resp.status_code == 200:
-            data = resp.json()
-            print(
-                f"✅ /render with max_chars_per_line={specified_limit} ok | size: {data.get('width')}x{data.get('height')}"
-            )
-            save_files("render", timestamp, data, suffix=f"with_limit_{specified_limit}")
-        elif resp.status_code == 401:
-            print("❌ /render with limit returned 401 Unauthorized. Check API_TOKEN.")
-        else:
-            print(f"❌ /render with limit failed: {resp.status_code}")
-            print(f"   Response: {resp.text[:200]}...")
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Could not connect to the API at {url}.")
-        print(f"   Error: {e}")
+    _request_and_log(
+        payload_with_limit,
+        label=f"with max_chars_per_line={specified_limit} ok",
+        suffix=f"with_limit_{specified_limit}",
+    )
 
     # 2) 文字数指定なし（自動: 総文字数の平方根に最も近い自然数）
     payload_auto = {
@@ -175,22 +182,11 @@ def check_linewrapping_cases(timestamp):
         "font_size": 22,
         "padding": 20,
     }
-    try:
-        resp = requests.post(url, headers=HEADERS, data=json.dumps(payload_auto))
-        if resp.status_code == 200:
-            data = resp.json()
-            print(
-                f"✅ /render without limit ok (auto) | size: {data.get('width')}x{data.get('height')}"
-            )
-            save_files("render", timestamp, data, suffix="auto_limit")
-        elif resp.status_code == 401:
-            print("❌ /render without limit returned 401 Unauthorized. Check API_TOKEN.")
-        else:
-            print(f"❌ /render without limit failed: {resp.status_code}")
-            print(f"   Response: {resp.text[:200]}...")
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Could not connect to the API at {url}.")
-        print(f"   Error: {e}")
+    _request_and_log(
+        payload_auto,
+        label="without limit ok (auto)",
+        suffix="auto_limit",
+    )
 
 
 if __name__ == "__main__":

@@ -99,6 +99,9 @@ FONT_CANDIDATES = [
     Path("C:/Windows/Fonts/msgothic.ttc"),  # Windows
 ]
 
+# Base64埋め込みフォントの最大許容サイズ（環境変数で上書き可能）
+MAX_FONT_BASE64_SIZE = int(os.getenv("MAX_FONT_BASE64_SIZE", "40000000"))
+
 
 # ---------- Persistent Playwright browser and page pool ----------
 class PagePool:
@@ -652,17 +655,21 @@ class JapaneseVerticalHTMLGenerator:
                 for chunk in chunks:
                     chunk_length = len(chunk)
 
-                    # チャンクが最大文字数を超える場合、強制的に分割
-                    while chunk_length > max_chars_per_line:
+                    # チャンクが最大文字数を超える場合、強制的に分割（バルク処理）
+                    if chunk_length > max_chars_per_line:
                         if current_line:
                             processed_lines.append(current_line)
                             current_line = ""
                             current_length = 0
 
-                        # 最大文字数分だけ取り出して追加
-                        part = chunk[:max_chars_per_line]
-                        processed_lines.append(part)
-                        chunk = chunk[max_chars_per_line:]
+                        parts = [
+                            chunk[i : i + max_chars_per_line]
+                            for i in range(0, chunk_length, max_chars_per_line)
+                        ]
+                        for part in parts[:-1]:
+                            processed_lines.append(part)
+                        # 最後のパートは次の処理に回す
+                        chunk = parts[-1]
                         chunk_length = len(chunk)
 
                     if current_length + chunk_length <= max_chars_per_line:
@@ -763,15 +770,16 @@ class JapaneseVerticalHTMLGenerator:
         font_size: int,
         line_height: float,
         padding: int,
+        max_chars_per_line: int,
     ) -> Tuple[int, int]:
-        """テキストからキャンバスサイズを推定"""
+        """テキストと行長上限からキャンバスサイズを一貫したロジックで推定"""
         lines = text.split("\n")
-        column_width = int(font_size * line_height * 1.2)
         total_chars = sum(len(line) for line in lines)
+        column_width = int(font_size * line_height * 1.2)
 
-        # max_chars_per_line 無指定ケースの汎用推定：
-        # 縦方向（1列あたり）の文字数を sqrt(total_chars)+1 程度にして概ね正方形へ。
-        chars_per_column = max(2, int(math.ceil(math.sqrt(max(1, total_chars)))) + 1)
+        # 行の最大文字数（縦方向の最大段数）に合わせて高さを見積もり、
+        # 総文字数から必要列数を算出する。
+        chars_per_column = max(1, int(max_chars_per_line))
         estimated_columns = max(1, int(math.ceil(total_chars / chars_per_column)))
 
         estimated_height = int(
@@ -804,68 +812,38 @@ class JapaneseVerticalHTMLGenerator:
         font_path: Optional[str] = None,
     ) -> str:
         """縦書きHTMLを生成"""
-        # 最大文字数が未指定なら、総文字数の平方根に最も近い自然数を採用
-        if max_chars_per_line is None:
-            total_chars = len(text.replace("\n", ""))
-            max_chars_per_line = max(1, round(math.sqrt(total_chars)))
+        # 最大文字数が未指定なら、総文字数の平方根に最も近い自然数を採用（以後の計算でも再利用）
+        effective_max_chars = max_chars_per_line
+        if effective_max_chars is None:
+            total_chars_no_nl = len(text.replace("\n", ""))
+            effective_max_chars = max(1, round(math.sqrt(total_chars_no_nl)))
 
         # BudouXによる自動改行処理（1回で十分）
-        text = self._apply_budoux_line_breaks(text, max_chars_per_line)
+        text = self._apply_budoux_line_breaks(text, effective_max_chars)
 
         # フォントを常にBase64でエンコードして埋め込む
         font_base64: Optional[str] = self._encode_font_as_base64(font_path)
         # 以前は3MB以上を回避していたが、ローカルフォント（源暎系）を確実に使うため閾値を引き上げ
         # （Base64化で ~1.3x になるため、40MB まで許容）
-        if font_base64 and len(font_base64) > 40_000_000:
+        if font_base64 and len(font_base64) > MAX_FONT_BASE64_SIZE:
             logger.error(
-                "[FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): %s bytes",
+                "[FONT_EMBED_SKIPPED] Embedded font too large; falling back to system fonts | size(base64): %s bytes (limit=%s)",
                 len(font_base64),
+                MAX_FONT_BASE64_SIZE,
             )
             font_base64 = None
 
         # テキスト処理
         processed_text = self._process_text_for_vertical(text)
 
-        # テキストの文字数を基に適切なサイズを計算
-        lines = text.split("\n")
-        max_line_chars = max(len(line) for line in lines) if lines else 0
-        num_lines = len(lines)
-
-        # 基本的な幅の計算（1列あたりの幅）
-        column_width = int(font_size * line_height * 1.2)  # 1文字の幅 + 余裕
-
-        total_chars = sum(len(line) for line in lines)
-
-        if max_chars_per_line is None:
-            # 無指定時: 縦方向（1列あたり）の文字数を sqrt(total_chars)+1 に設定し、概ね正方形に近づける
-            chars_per_column = max(
-                2, int(math.ceil(math.sqrt(max(1, total_chars)))) + 1
-            )
-            estimated_columns = max(1, int(math.ceil(total_chars / chars_per_column)))
-            estimated_height = int(
-                (chars_per_column * font_size * line_height) + (padding * 2) + 50,
-            )
-        else:
-            # 指定あり: これまでの推定ロジックを維持（回帰防止）
-            estimated_height = int(
-                (max_line_chars * font_size * line_height) + (padding * 2) + 50,
-            )
-            # 1列に収まる文字数を計算
-            chars_per_column = max(
-                10, int(estimated_height / (font_size * line_height))
-            )
-            # 必要な列数を計算
-            estimated_columns = max(
-                1,
-                (total_chars + num_lines - 1) // chars_per_column + 1,
-            )
-
-        # 最終的な幅（複数列の場合）
-        estimated_width = (estimated_columns * column_width) + (padding * 2)
-
-        # 最小幅を保証
-        estimated_width = max(200, estimated_width)
-        estimated_height = max(200, estimated_height)
+        # テキストの文字数を基に適切なサイズを一元ロジックで計算
+        estimated_width, estimated_height = self._calculate_canvas_size(
+            text=text,
+            font_size=font_size,
+            line_height=line_height,
+            padding=padding,
+            max_chars_per_line=effective_max_chars,
+        )
 
         # フォントフェイス定義（埋め込み有効時のみ）
         font_face = self._font_face_css(font_base64)
@@ -939,7 +917,7 @@ class JapaneseVerticalHTMLGenerator:
             overflow: visible;
             word-break: normal;
             text-align: start;
-            /* 自動折り返しを無効化 */
+            /* 空白と改行を保持し、自動折り返しを無効化 */
             white-space: pre;
         }}
 
