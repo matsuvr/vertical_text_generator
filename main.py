@@ -1,10 +1,5 @@
 "HTMLベース日本語縦書きAPI - Playwrightで高品質な縦書きレンダリング"
 
-# (
-#     screenshot_bytes,
-#     _,
-#     _,
-# ) = self._converter.render_on_page(page, html_content)
 import asyncio
 import base64
 import html
@@ -17,7 +12,7 @@ import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import budoux
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -25,7 +20,6 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from PIL import Image
-from playwright.async_api import async_playwright
 from pydantic import BaseModel, Field, validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -45,14 +39,20 @@ def setup_error_only_logging():
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
     # ERRORレベル以上のみをファイルに記録するハンドラを設定
-    handler = logging.handlers.TimedRotatingFileHandler(
-        filename=log_file,
-        when="midnight",  # 毎日真夜中にローテーション
-        interval=1,  # 1日間隔
-        backupCount=1,  # 1日分のバックアップのみ保持（古いファイルは削除）
-        encoding="utf-8",
-    )
-    handler.setLevel(logging.ERROR)  # ハンドラレベルでERRORに制限
+    # ただし権限などで失敗した場合はstderrへのStreamHandlerへフォールバック
+    try:
+        handler = logging.handlers.TimedRotatingFileHandler(
+            filename=log_file,
+            when="midnight",  # 毎日真夜中にローテーション
+            interval=1,  # 1日間隔
+            backupCount=1,  # 1日分のバックアップのみ保持（古いファイルは削除）
+            encoding="utf-8",
+        )
+        handler.setLevel(logging.ERROR)  # ハンドラレベルでERRORに制限
+    except Exception:
+        # テスト環境等でファイルへ書けない場合
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.ERROR)
 
     # ログフォーマット設定
     formatter = logging.Formatter(
@@ -165,6 +165,7 @@ class BrowserManager:
         async with cls._init_lock:
             if cls._browser is None:
                 from playwright.async_api import async_playwright
+
                 cls._playwright = await async_playwright().start()
                 cls._browser = await cls._playwright.chromium.launch(
                     headless=True,
@@ -177,7 +178,11 @@ class BrowserManager:
                 cls._pool = PagePool(cls._browser, capacity=max(1, pool_size))
                 # ページの事前作成（高スループット向け）
                 try:
-                    precreate = os.getenv("PRECREATE_PAGES", "1") not in ("0", "false", "False")
+                    precreate = os.getenv("PRECREATE_PAGES", "1") not in (
+                        "0",
+                        "false",
+                        "False",
+                    )
                     if precreate:
                         await cls._pool.precreate()
                 except Exception:
@@ -228,7 +233,9 @@ def select_font_path(font_name: Optional[str]) -> Optional[str]:
     return None
 
 
-def resolve_font_name_and_path(requested_font: Optional[str]) -> Tuple[str, Optional[str]]:
+def resolve_font_name_and_path(
+    requested_font: Optional[str],
+) -> Tuple[str, Optional[str]]:
     """要求フォント名から、実際に使用する論理名とパスを返す。
 
     戻り値のフォント名は 'gothic' | 'mincho' | 'antique' のいずれか。
@@ -240,7 +247,9 @@ def resolve_font_name_and_path(requested_font: Optional[str]) -> Tuple[str, Opti
         if path and path.exists():
             return key, str(path)
         # 無効指定はアンチックへフォールバック
-        logger.error(f"Invalid font specified: {requested_font}, falling back to antique")
+        logger.error(
+            f"Invalid font specified: {requested_font}, falling back to antique"
+        )
 
     # デフォルト（アンチック）
     if DEFAULT_FONT_PATH.exists():
@@ -448,6 +457,7 @@ class VerticalTextRequest(BaseModel):
         le=100,
         description="1行あたりの最大文字数（BudouXで自動改行）",
     )
+
     @validator("text")
     def text_not_empty(cls, v):
         if not v.strip():
@@ -462,7 +472,9 @@ class VerticalTextResponse(BaseModel):
     height: int = Field(..., description="画像の高さ")
     processing_time_ms: float = Field(..., description="処理時間（ミリ秒）")
     trimmed: bool = Field(..., description="画像がトリミングされたかどうか")
-    font: str = Field(..., description="使用されたフォント名（'antique'/'gothic'/'mincho'）")
+    font: str = Field(
+        ..., description="使用されたフォント名（'antique'/'gothic'/'mincho'）"
+    )
 
 
 class _BatchRenderBase(BaseModel):
@@ -486,6 +498,7 @@ class _BatchRenderBase(BaseModel):
         le=100,
         description="1行あたりの最大文字数（BudouXで自動改行）",
     )
+
 
 class BatchRenderItem(_BatchRenderBase):
     text: str = Field(..., description="レンダリングするテキスト")
@@ -542,7 +555,9 @@ class JapaneseVerticalHTMLGenerator:
             self._ensure_font_memory_reserve()
         except Exception:
             # 先読み失敗は致命的ではないため握りつぶして続行
-            logger.warning("Font preload failed; will lazily load on first use", exc_info=True)
+            logger.warning(
+                "Font preload failed; will lazily load on first use", exc_info=True
+            )
 
     def _preload_fonts_into_memory(self) -> None:
         """既知のフォントをBase64へ変換しプロセスのメモリにキャッシュ"""
@@ -593,7 +608,9 @@ class JapaneseVerticalHTMLGenerator:
 
         reserve_needed = max(0, target_bytes - total_cache_bytes)
         try:
-            self._font_memory_reserve = bytearray(reserve_needed) if reserve_needed > 0 else b""
+            self._font_memory_reserve = (
+                bytearray(reserve_needed) if reserve_needed > 0 else b""
+            )
             if reserve_needed > 0:
                 logger.info(
                     "Reserved additional font memory: %s bytes (cache=%s bytes, target=%s bytes)",
@@ -699,10 +716,19 @@ class JapaneseVerticalHTMLGenerator:
             line = line.replace("…", "︙")
 
             # 棒状記号（ダーシ・罫線など）で縦組時に回転定義がないものを水平バーで描画
-            # 対象: — (U+2014), ― (U+2015), – (U+2013), − (U+2212), － (U+FF0D),
-            #      ─ (U+2500), ━ (U+2501), ⎯ (U+23AF)
+            # 対象:
+            #  – (U+2013 EN DASH)
+            #  — (U+2014 EM DASH)
+            #  ― (U+2015 HORIZONTAL BAR)
+            #  − (U+2212 MINUS SIGN)
+            #  － (U+FF0D FULLWIDTH HYPHEN-MINUS)
+            #  ─ (U+2500 BOX DRAWINGS LIGHT HORIZONTAL)
+            #  ━ (U+2501 BOX DRAWINGS HEAVY HORIZONTAL)
+            #  ⎯ (U+23AF HORIZONTAL LINE EXTENSION)
+            #  ⸺ (U+2E3A TWO-EM DASH)
+            #  ⸻ (U+2E3B THREE-EM DASH)
             # 注意: 長音記号「ー」(U+30FC) は含めない
-            rotatable_pattern = r"([—―–−－─━⎯]+)"
+            rotatable_pattern = r"([–—―−－─━⎯⸺⸻]+)"
 
             def _dash_to_rotate(m: re.Match) -> str:
                 out = []
@@ -855,15 +881,19 @@ class JapaneseVerticalHTMLGenerator:
         }}
 
         body {{
-            width: {estimated_width}px;
-            height: {estimated_height}px;
+            /* 予測値は下限として扱い、コンテンツが増えたら自動で拡張 */
+            min-width: {estimated_width}px;
+            min-height: {estimated_height}px;
             background: transparent;
-            overflow: hidden;
+            /* コンテンツが推定を超える場合に切れないようにする */
+            overflow: visible;
         }}
 
         .vertical-text-container {{
-            width: 100%;
-            height: 100%;
+            /* コンテンツに合わせてサイズが決まるようにする */
+            display: inline-block;
+            width: auto;
+            height: auto;
             padding: {padding}px;
             background: transparent;
         }}
@@ -876,8 +906,10 @@ class JapaneseVerticalHTMLGenerator:
             line-height: {line_height};
             letter-spacing: {letter_spacing}em;
             font-feature-settings: 'vert' 1, 'vrt2' 1, 'vkrn' 1, 'vpal' 1;
-            height: 100%;
-            width: 100%;
+            /* コンテンツの自然な大きさを尊重 */
+            display: inline-block;
+            width: auto;
+            height: auto;
             color: #000;
             overflow: visible;
             word-break: normal;
@@ -898,15 +930,17 @@ class JapaneseVerticalHTMLGenerator:
         /* 縦組で回転が定義されていない棒状記号を強制回転 */
         .rotate-90 {{
             display: inline-block;
-            /* 文字を横倒し（横組み方向）にする */
-            text-orientation: sideways;
-            /* 一部ブラウザの互換性のため回転も併用 */
+            /* 内側は横書きとして扱い、確実に90度回転させる */
+            writing-mode: horizontal-tb;
+            text-orientation: mixed;
+            /* フォントの縦字機能は無効化して形のブレを避ける */
+            font-feature-settings: 'vert' 0, 'vrt2' 0, 'vpal' 0;
             transform: rotate(90deg);
             transform-origin: center center;
-            /* 縦字用OpenType機能を無効化して形のブレを避ける */
-            font-feature-settings: 'vert' 0, 'vrt2' 0, 'vpal' 0;
             line-height: 1;
             letter-spacing: 0;
+            white-space: nowrap;
+            vertical-align: middle;
         }}
 
         /* 水平バー（横線）スタイル */
@@ -988,14 +1022,12 @@ class HTMLToPNGConverter:
             }
         """,
         )
-        MAX_DIM = 8000
+        # 任意の上限によってコンテンツが切れないように、実寸を採用
         actual_width = max(
-            1,
-            min(int(dimensions["width"]) if dimensions.get("width") else 1, MAX_DIM),
+            1, int(dimensions["width"]) if dimensions.get("width") else 1
         )
         actual_height = max(
-            1,
-            min(int(dimensions["height"]) if dimensions.get("height") else 1, MAX_DIM),
+            1, int(dimensions["height"]) if dimensions.get("height") else 1
         )
         locator = page.locator(".vertical-text-container")
         screenshot_bytes = await locator.screenshot(type="png", omit_background=True)
@@ -1222,6 +1254,13 @@ renderer_service = VerticalTextRendererService(html_generator, converter)
 # FastAPI lifecycle events to manage persistent browser
 @app.on_event("startup")
 async def _on_startup():
+    # pytest 実行時や明示的にスキップ指定された場合は、ブラウザ初期化/ウォームアップを行わない
+    if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("SKIP_BROWSER_INIT") in (
+        "1",
+        "true",
+        "True",
+    ):
+        return
     try:
         pool_size = int(os.getenv("PAGE_POOL_SIZE", str(MAX_CONCURRENCY)))
     except ValueError:
@@ -1229,7 +1268,11 @@ async def _on_startup():
     await BrowserManager.start(pool_size)
     # 軽いウォームアップ（任意）
     try:
-        do_warmup = os.getenv("WARMUP_RENDER_ON_STARTUP", "1") not in ("0", "false", "False")
+        do_warmup = os.getenv("WARMUP_RENDER_ON_STARTUP", "1") not in (
+            "0",
+            "false",
+            "False",
+        )
         if do_warmup:
             # ごく小さいレンダリングを1回実行してJITやフォント読み込みを温める
             font_name, font_path = resolve_font_name_and_path(None)
