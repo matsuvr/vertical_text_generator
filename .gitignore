@@ -28,3 +28,6 @@ logs/
 # VSCode settings
 .vscode/
 .vscode/settings.json
+
+# ide settings
+.idea/
