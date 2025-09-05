@@ -17,6 +17,12 @@ def test_dash_rotation_in_debug_html():
     )
     assert r.status_code == 200
     html = r.text
+    m = re.search(r'\.rotate-90\s*\{(.*?)\}', html, re.DOTALL)
+    assert m, ".rotate-90 CSS rule not found"
+    style_content = m.group(1)
+    assert "display: inline-flex" in style_content
+    assert "width: 1em" in style_content
+    assert "height: 1em" in style_content
     # Two-em dash may be normalized as U+2014 repeated or kept as U+2E3A depending on input method.
     # We verify that any of the dash characters are wrapped with rotate-90 spans.
     # Check that there is at least one rotate-90 span present.
