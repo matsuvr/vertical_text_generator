@@ -1,4 +1,4 @@
-"HTMLベース日本語縦書きAPI - Playwrightで高品質な縦書きレンダリング"
+"""HTMLベース日本語縦書きAPI - Playwrightで高品質な縦書きレンダリング"""
 
 import asyncio
 import base64
@@ -252,7 +252,7 @@ def resolve_font_name_and_path(
             return key, str(path)
         # 無効指定はアンチックへフォールバック
         logger.error(
-            f"Invalid font specified: {requested_font}, falling back to antique"
+            f"Invalid font specified: {requested_font}, falling back to antique",
         )
 
     # デフォルト（アンチック）
@@ -477,7 +477,8 @@ class VerticalTextResponse(BaseModel):
     processing_time_ms: float = Field(..., description="処理時間（ミリ秒）")
     trimmed: bool = Field(..., description="画像がトリミングされたかどうか")
     font: str = Field(
-        ..., description="使用されたフォント名（'antique'/'gothic'/'mincho'）"
+        ...,
+        description="使用されたフォント名（'antique'/'gothic'/'mincho'）",
     )
 
 
@@ -560,7 +561,8 @@ class JapaneseVerticalHTMLGenerator:
         except Exception:
             # 先読み失敗は致命的ではないため握りつぶして続行
             logger.warning(
-                "Font preload failed; will lazily load on first use", exc_info=True
+                "Font preload failed; will lazily load on first use",
+                exc_info=True,
             )
 
     def _preload_fonts_into_memory(self) -> None:
@@ -603,9 +605,7 @@ class JapaneseVerticalHTMLGenerator:
         total_cache_bytes = 0
         try:
             for v in self._font_base64_cache.values():
-                if isinstance(v, str):
-                    total_cache_bytes += len(v)
-                elif isinstance(v, (bytes, bytearray)):
+                if isinstance(v, str) or isinstance(v, (bytes, bytearray)):
                     total_cache_bytes += len(v)
         except Exception:
             pass
@@ -959,7 +959,10 @@ class JapaneseVerticalHTMLGenerator:
             line-height: 1;
             letter-spacing: 0;
             white-space: nowrap;
-            vertical-align: middle;
+            vertical-align: baseline;
+            /* 位置調整用の追加プロパティ */
+            position: relative;
+            top: 0.1em;  /* 微調整値（フォントにより調整が必要な場合がある） */
         }}
 
         /* 水平バー（横線）スタイル */
@@ -1041,10 +1044,12 @@ class HTMLToPNGConverter:
         )
         # 任意の上限によってコンテンツが切れないように、実寸を採用
         actual_width = max(
-            1, int(dimensions["width"]) if dimensions.get("width") else 1
+            1,
+            int(dimensions["width"]) if dimensions.get("width") else 1,
         )
         actual_height = max(
-            1, int(dimensions["height"]) if dimensions.get("height") else 1
+            1,
+            int(dimensions["height"]) if dimensions.get("height") else 1,
         )
         locator = page.locator(".vertical-text-container")
         screenshot_bytes = await locator.screenshot(type="png", omit_background=True)
