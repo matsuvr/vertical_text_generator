@@ -944,7 +944,11 @@ class JapaneseVerticalHTMLGenerator:
 
         /* 縦組で回転が定義されていない棒状記号を強制回転 */
         .rotate-90 {{
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1em;
+            height: 1em;
             /* 内側は横書きとして扱い、確実に90度回転させる */
             writing-mode: horizontal-tb;
             text-orientation: mixed;
