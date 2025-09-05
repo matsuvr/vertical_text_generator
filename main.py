@@ -687,7 +687,18 @@ class JapaneseVerticalHTMLGenerator:
                 if current_line:
                     processed_lines.append(current_line)
 
+        processed_lines = self._apply_line_head_kinsoku(processed_lines)
         return "\n".join(processed_lines)
+
+    def _apply_line_head_kinsoku(self, lines: List[str]) -> List[str]:
+        """指定した記号が行頭に来ないように調整"""
+        forbidden = {"、", "。", "」", "〟", "っ", "ッ", "ｯ"}
+        adjusted = lines[:]
+        for i in range(1, len(adjusted)):
+            while adjusted[i] and adjusted[i][0] in forbidden:
+                adjusted[i - 1] += adjusted[i][0]
+                adjusted[i] = adjusted[i][1:]
+        return adjusted
 
     def _encode_font_as_base64(self, font_path: Optional[str] = None) -> Optional[str]:
         """フォントファイルをBase64エンコード（結果をキャッシュ）"""
