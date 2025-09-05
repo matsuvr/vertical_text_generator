@@ -698,7 +698,7 @@ class JapaneseVerticalHTMLGenerator:
             while adjusted[i] and adjusted[i][0] in forbidden:
                 adjusted[i - 1] += adjusted[i][0]
                 adjusted[i] = adjusted[i][1:]
-        return [line for line in adjusted if line]
+        return adjusted
 
     def _encode_font_as_base64(self, font_path: Optional[str] = None) -> Optional[str]:
         """フォントファイルをBase64エンコード（結果をキャッシュ）"""
