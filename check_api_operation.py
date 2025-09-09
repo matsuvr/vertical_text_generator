@@ -12,12 +12,9 @@ BASE_URL = "http://localhost:8000"
 OUTPUT_DIR = "operation_checks_output"
 # --- 設定ここまで ---
 
-# .env.exampleを参考に環境変数からトークンを取得
-API_TOKEN = os.environ.get("API_TOKEN", "")
-HEADERS = {
-    "Content-Type": "application/json",
-    "Authorization": f"Bearer {API_TOKEN}"
-}
+# No API token is required for internal usage. We keep a simple header set
+# and do not read any API_TOKEN environment variable.
+HEADERS = {"Content-Type": "application/json"}
 
 def save_files(endpoint_name, timestamp, data, suffix=""):
     """レスポンスのJSONと画像を保存する"""
@@ -76,15 +73,17 @@ def check_render_endpoint(timestamp):
             if response.status_code == 200:
                 try:
                     data = response.json()
-                    if "image_base64" in data and data["image_base64"]:
-                        print(f"    ✅ /render (font: {font_name_for_file}) returned a successful response.")
-                        save_files('render', timestamp, data, suffix=font_name_for_file)
-                    else:
-                        print(f"    ❌ /render (font: {font_name_for_file}) response is missing 'image_base64'.")
                 except json.JSONDecodeError:
                     print(f"    ❌ /render (font: {font_name_for_file}) did not return valid JSON.")
+                    continue
+
+                if "image_base64" in data and data["image_base64"]:
+                    print(f"    ✅ /render (font: {font_name_for_file}) returned a successful response.")
+                    save_files('render', timestamp, data, suffix=font_name_for_file)
+                else:
+                    print(f"    ❌ /render (font: {font_name_for_file}) response is missing 'image_base64'.")
             elif response.status_code == 401:
-                 print(f"    ❌ /render (font: {font_name_for_file}) returned 401 Unauthorized. Is the API_TOKEN environment variable set correctly?")
+                print(f"    ❌ /render (font: {font_name_for_file}) returned 401 Unauthorized.")
             else:
                 print(f"    ❌ /render (font: {font_name_for_file}) failed with status code {response.status_code}.")
                 print(f"       Response: {response.text[:200]}...")
@@ -113,15 +112,17 @@ def check_batch_render_endpoint(timestamp):
         if response.status_code == 200:
             try:
                 data = response.json()
-                if "results" in data and isinstance(data["results"], list) and len(data["results"]) == 2:
-                    print("✅ /render/batch endpoint returned a successful response.")
-                    save_files('batch', timestamp, data)
-                else:
-                    print("❌ /render/batch endpoint response is malformed.")
             except json.JSONDecodeError:
                 print("❌ /render/batch endpoint did not return valid JSON.")
+                return
+
+            if "results" in data and isinstance(data["results"], list) and len(data["results"]) == 2:
+                print("✅ /render/batch endpoint returned a successful response.")
+                save_files('batch', timestamp, data)
+            else:
+                print("❌ /render/batch endpoint response is malformed.")
         elif response.status_code == 401:
-             print("❌ /render/batch endpoint returned 401 Unauthorized. Is the API_TOKEN environment variable set correctly?")
+            print("❌ /render/batch endpoint returned 401 Unauthorized.")
         else:
             print(f"❌ /render/batch endpoint failed with status code {response.status_code}.")
             print(f"   Response: {response.text[:200]}...")
@@ -154,7 +155,7 @@ def check_linewrapping_cases(timestamp):
                 )
                 save_files("render", timestamp, data, suffix=suffix)
             elif resp.status_code == 401:
-                print("❌ /render returned 401 Unauthorized. Check API_TOKEN.")
+                print("❌ /render returned 401 Unauthorized.")
             else:
                 print(f"❌ /render {label} failed: {resp.status_code}")
                 print(f"   Response: {resp.text[:200]}...")
@@ -191,18 +192,17 @@ def check_linewrapping_cases(timestamp):
 
 if __name__ == "__main__":
     print("--- API Operation Check Start ---")
-    
+
     # 出力ディレクトリを作成
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    
+
     # 実行日時を取得
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    if not API_TOKEN:
-        print("⚠️  Warning: API_TOKEN environment variable is not set. Authentication may fail.")
+    # No API_TOKEN required for internal service usage.
 
     check_render_endpoint(timestamp_str)
     check_batch_render_endpoint(timestamp_str)
     check_linewrapping_cases(timestamp_str)
-    
+
     print("\n--- API Operation Check End ---")

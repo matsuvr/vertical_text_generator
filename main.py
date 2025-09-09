@@ -16,10 +16,9 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import budoux
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from PIL import Image
 from pydantic import BaseModel, Field, validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -74,11 +73,7 @@ logger = setup_error_only_logging()
 
 app = FastAPI(title="HTMLベース日本語縦書きAPI")
 
-# セキュリティ設定 (Authorization欠如も401に統一するため auto_error=False)
-security = HTTPBearer(auto_error=False)
-
-# 環境変数からトークンを取得 (デフォルト値を設定)
-API_TOKEN = os.getenv("API_TOKEN", "your-secret-token-here")
+# This service is internal. No external API token is required.
 
 # 同時実行数の制限（高負荷時のメモリピーク抑制）
 MAX_CONCURRENCY = int(os.getenv("MAX_CONCURRENCY", "2"))
@@ -303,25 +298,9 @@ def _error_json_response(
     )
 
 
-def verify_token(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-) -> str:
-    """Bearerトークンの検証（欠如/不一致ともに401へ統一）"""
-    if not credentials or not credentials.credentials:
-        # 認証情報欠如 → 401
-        raise HTTPException(
-            status_code=401,
-            detail="Unauthorized",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if credentials.credentials != API_TOKEN:
-        # トークン不一致 → 401
-        raise HTTPException(
-            status_code=401,
-            detail="Unauthorized",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return credentials.credentials
+# Authentication is not required for this internal service. The previous
+# verify_token no-op has been removed; endpoints are public within the
+# internal deployment boundary.
 
 
 @app.exception_handler(RequestValidationError)
@@ -1326,7 +1305,6 @@ async def _on_shutdown():
 @app.post(
     "/render",
     response_model=VerticalTextResponse,
-    dependencies=[Depends(verify_token)],
 )
 async def render_vertical_text(request: VerticalTextRequest):
     """縦書きテキストをレンダリング（認証必須）"""
@@ -1352,7 +1330,6 @@ async def render_vertical_text(request: VerticalTextRequest):
 @app.post(
     "/render/batch",
     response_model=BatchRenderResponse,
-    dependencies=[Depends(verify_token)],
 )
 async def render_vertical_text_batch(request: BatchRenderRequest):
     """複数テキストをまとめてレンダリング（認証必須）"""
@@ -1404,7 +1381,7 @@ async def root():
             "/debug/html": "生成されるHTMLを確認（要認証）",
             "/health": "ヘルスチェック（認証不要）",
         },
-        "authentication": "Bearer token required for protected endpoints",
+    "authentication": "No external bearer token required (internal service)",
     }
 
 
@@ -1419,7 +1396,7 @@ async def health_check():
     }
 
 
-@app.get("/debug/html", dependencies=[Depends(verify_token)])
+@app.get("/debug/html")
 async def debug_html(
     text: str = "テスト文字列\n縦書きのテストです。",
     font_size: int = 20,
