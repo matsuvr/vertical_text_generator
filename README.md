@@ -22,16 +22,16 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
 
 #### リクエストパラメータ
 
-| パラメータ | 型 | 必須 | デフォルト | 説明 |
-|-----------|---|------|-----------|------|
-| text | string | ✓ | - | レンダリングするテキスト |
-| font | string | - | null | 使用するフォント（"gothic" または "mincho"。未指定/無効時はアンチックにフォールバック） |
-| font_size | integer | - | 20 | フォントサイズ (8-100) |
-| line_height | float | - | 1.6 | 行間 (1.0-3.0) |
-| letter_spacing | float | - | 0.05 | 文字間（em単位） (0-0.5) |
-| padding | integer | - | 20 | 余白（ピクセル） (0-100) |
-| use_tategaki_js | boolean | - | false | Tategaki.jsライブラリを使用 |
-| max_chars_per_line | integer | - | null | 1行あたりの最大文字数（BudouXで自動改行） |
+| パラメータ         | 型      | 必須 | デフォルト | 説明                                                                                    |
+| ------------------ | ------- | ---- | ---------- | --------------------------------------------------------------------------------------- |
+| text               | string  | ✓    | -          | レンダリングするテキスト                                                                |
+| font               | string  | -    | null       | 使用するフォント（"gothic" または "mincho"。未指定/無効時はアンチックにフォールバック） |
+| font_size          | integer | -    | 20         | フォントサイズ (8-100)                                                                  |
+| line_height        | float   | -    | 1.6        | 行間 (1.0-3.0)                                                                          |
+| letter_spacing     | float   | -    | 0.05       | 文字間（em単位） (0-0.5)                                                                |
+| padding            | integer | -    | 20         | 余白（ピクセル） (0-100)                                                                |
+| use_tategaki_js    | boolean | -    | false      | Tategaki.jsライブラリを使用                                                             |
+| max_chars_per_line | integer | -    | null       | 1行あたりの最大文字数（BudouXで自動改行）                                               |
 
 #### フォントオプション
 
@@ -40,6 +40,7 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
 - 指定なし/無効指定: デフォルト（アンチック：GenEiAntiqueNv5-M.ttf）
 
 備考:
+
 - `font` に "gothic"/"mincho" 以外を指定した場合もアンチックにフォールバックします。
 - アンチックを明示したい場合は `font` を省略するのが推奨です。
 
@@ -70,6 +71,7 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
 ```
 
 フィールド説明:
+
 - `font`: 実際に使用されたフォント名（`antique`/`gothic`/`mincho`）
 
 ### POST /render/batch
@@ -79,17 +81,17 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
 - `items` 配列の最大長は50。超過した場合は400 Bad Requestを返します。
 - `defaults` で共通パラメータを指定でき、各アイテムで上書きできます。
 - 無効なフォント指定はアンチック体にフォールバックします。
- - 各結果オブジェクトに実際に使用された `font` 名が含まれます。
+- 各結果オブジェクトに実際に使用された `font` 名が含まれます。
 
 #### リクエスト例
 
 ```jsonc
 {
-  "defaults": {"font": "gothic", "font_size": 20},
+  "defaults": { "font": "gothic", "font_size": 20 },
   "items": [
-    {"text": "こんにちは世界"},
-    {"text": "フォントが存在しない例", "font": "unknown_font"}
-  ]
+    { "text": "こんにちは世界" },
+    { "text": "フォントが存在しない例", "font": "unknown_font" },
+  ],
 }
 ```
 
@@ -98,9 +100,23 @@ HTMLとCSSを使用して日本語の縦書きテキストを画像として生�
 ```jsonc
 {
   "results": [
-    {"image_base64": "...", "width": 120, "height": 200, "processing_time_ms": 456.7, "trimmed": false, "font": "gothic"},
-    {"image_base64": "...", "width": 120, "height": 200, "processing_time_ms": 789.0, "trimmed": true, "font": "mincho"}
-  ]
+    {
+      "image_base64": "...",
+      "width": 120,
+      "height": 200,
+      "processing_time_ms": 456.7,
+      "trimmed": false,
+      "font": "gothic",
+    },
+    {
+      "image_base64": "...",
+      "width": 120,
+      "height": 200,
+      "processing_time_ms": 789.0,
+      "trimmed": true,
+      "font": "mincho",
+    },
+  ],
 }
 ```
 
@@ -139,6 +155,7 @@ docker run --rm -p 8080:8000 --shm-size=1g \
 ```
 
 注意点:
+
 - `--shm-size=1g` を付けると /dev/shm を増やし、Chromiumの共有メモリ不足によるクラッシュを防げます。
 - Cloud Run等にデプロイする場合、Dockerfileに必要なライブラリを追加済みなので、そのままデプロイできます。
 
@@ -161,11 +178,13 @@ docker run --rm -p 8080:8000 --shm-size=1g \
 - `WARMUP_RENDER_ON_STARTUP` : 起動時に軽いレンダリングを1回（既定: `1`）。
 
 Gunicorn関連の追加ENV（任意）:
+
 - `GUNICORN_TIMEOUT`（既定: `180`）: リクエストのタイムアウト秒。
 - `GUNICORN_GRACEFUL_TIMEOUT`（既定: `30`）: 優雅なシャットダウン待ち秒。
 - `GUNICORN_KEEPALIVE`（既定: `5`）: keep-alive秒。
 - `GUNICORN_MAX_REQUESTS`（既定: `0` 無効）: メモリリーク対策のワーカー再起動間隔。必要なら `1000` など。
 
 メモ:
+
 - メモリとCPUに余裕がある場合は `WEB_CONCURRENCY` と `PAGE_POOL_SIZE` の積（=総ページ数）を増やすとスループットが上がります。目安: 総ページ <= CPUスレッド数〜2倍。
 - 各ワーカーは独立にChromiumを保持します。`WEB_CONCURRENCY` を増やすとブラウザプロセスも増えますが、障害分離・可用性が向上します。
